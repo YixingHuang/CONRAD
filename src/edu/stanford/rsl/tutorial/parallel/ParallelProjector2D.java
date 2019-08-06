@@ -153,7 +153,7 @@ public class ParallelProjector2D {
 	}
 
 	public Grid2D projectRayDrivenCL(Grid2D grid) {
-		boolean debug = true;
+		boolean debug = false;
 		// create context
 		CLContext context = OpenCLUtil.createContext();
 		if (debug)

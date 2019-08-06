@@ -14,7 +14,6 @@ public class PreprocessImages {
 		
 		String imagePath1 = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCells\\37.jpg";
 		String imagePath2 = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCells\\37.png";
-		String savePath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCellsProcessed\\1.tif"; 
 		
 		PreprocessImages obj = new PreprocessImages();
 		ImagePlus imp;
