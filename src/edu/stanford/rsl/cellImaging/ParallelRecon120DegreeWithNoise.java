@@ -24,25 +24,29 @@ public class ParallelRecon120DegreeWithNoise {
 		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCellsProcessed\\";
 		String imgPath;
 		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\recons\\";
+		String referenceFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\referenceRecons\\";
 		String reconFbpPath;
 		String artifactPath;
+		String reconPath;
 		int sizeX = 512;
 		int sizeY = sizeX;
 		int s = 2; //sampling factor
-		ImagePlus imp, impFbp, impArtifact;
+		ImagePlus imp, impFbp, impArtifact, impRef;
 		ParallelRecon120DegreeWithNoise obj = new ParallelRecon120DegreeWithNoise();
 		Grid2D phan, recon, reconLimited, artifact, sinogram, filteredSinogram;
+		Grid2D phanNoisy;
 		int numDet = 512;
 		double deltaS = 1;
 		ParallelProjector2D projector = new ParallelProjector2D(Math.PI, Math.PI/180.0, numDet * deltaS, deltaS);
 		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, s, s);
 		RamLakKernel ramLak = new RamLakKernel(numDet, deltaS);
 		int idSave;
-		for(int imgIdx = 1; imgIdx <= 94; imgIdx++ )
+		for(int imgIdx = 1; imgIdx <= 1; imgIdx++ )
 		{
 			imgPath = folderPath + imgIdx + ".tif";
 			imp = IJ.openImage(imgPath);
 			phan = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
+			phan.getGridOperator().addBy(phan, 0.1f);
 			obj.addFOVCircle(phan);
 			for(int rotIdx = 0; rotIdx < 4; rotIdx++)
 			{
@@ -64,7 +68,15 @@ public class ParallelRecon120DegreeWithNoise {
 				if(imgIdx == 1 && rotIdx == 0)
 					recon.clone().show("recon");
 				
+				reconPath = referenceFolderPath + idSave + ".tif";
+				impRef = ImageUtil.wrapGrid(recon, null);
+				IJ.saveAs(impRef, "Tiff", reconPath);
+				
+//				phanNoisy = new Grid2D(phan);
+//				obj.addGaussianNoise(phanNoisy);
+//				sinogram = projector.projectRayDrivenCL(phanNoisy);				
 				obj.addPoissonNoise(sinogram, 1.0e6);
+
 				filteredSinogram = new Grid2D(sinogram);
 				for (int theta = 0; theta <= 120; ++theta) {
 					ramLak.applyToGrid(filteredSinogram.getSubGrid(theta));
@@ -131,6 +143,21 @@ public class ParallelRecon120DegreeWithNoise {
 			
 			}
 		sinogram.getGridOperator().multiplyBy(sinogram, amp);
+	}
+	
+	private void addGaussianNoise(Grid2D phan)
+	{
+		java.util.Random r = new java.util.Random();
+		double variance = 0.001;
+		double mean = 0;
+		double noise;
+		for(int i = 0; i < phan.getSize()[0]; i++)
+			for(int j = 0; j < phan.getSize()[1]; j++)
+			{
+				
+				noise = r.nextGaussian() * Math.sqrt(variance) + mean;
+				phan.setAtIndex(i, j, phan.getAtIndex(i, j) + (float) noise);
+			}
 	}
 	
 	private void addFOVCircle(Grid2D phan)
