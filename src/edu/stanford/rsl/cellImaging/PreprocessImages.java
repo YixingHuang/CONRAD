@@ -12,18 +12,18 @@ public class PreprocessImages {
 	public static void main(String[] args) {
 		new ImageJ();
 		
-		String imagePath1 = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCells\\37.jpg";
+		String imagePath1 = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCellsProcessed\\3.tif";
 		String imagePath2 = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCells\\37.png";
 		
 		PreprocessImages obj = new PreprocessImages();
 		ImagePlus imp;
-		imp = IJ.openImage(imagePath2);
+		imp = IJ.openImage(imagePath1);
 		Grid2D imgRaw = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
 		float maxV = imgRaw.getGridOperator().max(imgRaw);
 		imgRaw.getGridOperator().divideBy(imgRaw, maxV);
-		imgRaw = obj.downSampling(imgRaw);
-		imgRaw = obj.downSampling(imgRaw);
-		imgRaw = obj.downSampling(imgRaw);
+//		imgRaw = obj.downSampling(imgRaw);
+//		imgRaw = obj.downSampling(imgRaw);
+//		imgRaw = obj.downSampling(imgRaw);
 //		imgRaw.getGridOperator().multiplyBy(imgRaw, -1.f);
 //		imgRaw.getGridOperator().addBy(imgRaw, 1.0f);
 		obj.thresholding(imgRaw, 0.11f);
@@ -46,7 +46,7 @@ public class PreprocessImages {
 					img.setAtIndex(i, j, imgRaw.getAtIndex(startX + i, startY + j));
 			img.clone().show("cropped image");
 			
-			obj.keepCircularROI(img, 350, 256, 360);
+			obj.keepCircularROI(img, 312, 359, 120, 121, 0, 1.0f);
 			img.clone().show("ROI image");
 			
 		}
@@ -75,18 +75,35 @@ public class PreprocessImages {
 				}
 			img.clone().show("padded image");
 			
-			obj.keepCircularROI(img, 261, 259, 110);
+			obj.keepCircularROI(img, 263, 259, 103.0f, 100, -30 * Math.PI/ 180, 0.9f);
 			img.clone().show("ROI image");
 		}
 	}
 	
-	public void keepCircularROI(Grid2D img, float centX, float centY, float radius)
+	public void keepCircularROI(Grid2D img, float centX, float centY, float ra, float rb, double theta, float val)
 	{
-		float rr = radius * radius;
+		float rra = ra * ra;
+		float rrb = rb * rb;
+		float dx = 4 + (float)(Math.random() - 0.5) * 2.0f;
+		float rra2 = (ra + dx) * (ra + dx);
+		float rrb2 = (rb + dx) * (rb + dx);
+		double a, b, rota, rotb, aa, bb;
+		double cosTheta = Math.cos(theta);
+		double sinTheta = Math.sin(theta);
 		for(int i = 0; i < img.getSize()[0]; i++)
-			for(int j = 0; j < img.getSize()[1]; j++)
-				if((i - centX) * (i - centX) + (j - centY) * (j - centY) > rr)
+			for(int j = 0; j < img.getSize()[1]; j++) {
+				a = (i - centX);
+				b = (j - centY);
+				rota = a * cosTheta - b * sinTheta;
+				rotb = a * sinTheta + b * cosTheta;
+				aa = rota * rota;
+				bb = rotb * rotb;
+				if(aa/rra2 + bb/rrb2 > 1)
 					img.setAtIndex(i, j, 0);
+				else if(aa/rra + bb/rrb > 1)
+					img.setAtIndex(i, j, val);
+			}
+				
 	}
 	
 	public Grid2D downSampling(Grid2D img)

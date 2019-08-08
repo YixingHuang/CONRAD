@@ -11,7 +11,7 @@ public class GenerateBlueGreenAlgaePhantom {
 
 	public static void main(String[] args) {
 		new ImageJ();
-		BlueGreenAlgaePhantom phanObj = new BlueGreenAlgaePhantom(512, 512, 512, 50, 100);
+		BlueGreenAlgaePhantom phanObj = new BlueGreenAlgaePhantom(512, 512, 512, 100, 200);
 		Grid3D phan;
 		
 //		phan= phanObj.getNumericalPhantom();
@@ -20,7 +20,7 @@ public class GenerateBlueGreenAlgaePhantom {
 		ImagePlus imp;
 		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantoms\\";
 		String saveName;
-		for(int i = 10; i <= 10; i++)
+		for(int i = 1; i <= 10; i++)
 		{
 			phanObj.resetVolume();
 			phan = phanObj.getNumericalPhantom();

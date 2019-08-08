@@ -16,12 +16,12 @@ import ij.ImagePlus;
  *
  */
 
-public class ParallelRecon120DegreeWithNoise {
+public class ParallelRecon120DegreeWithNoiseForPhantom {
 
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
 		
-		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCellsProcessed\\";
+		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantomSlices\\";
 		String imgPath;
 		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\recons\\";
 		String referenceFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\referenceRecons\\";
@@ -32,7 +32,7 @@ public class ParallelRecon120DegreeWithNoise {
 		int sizeY = sizeX;
 		int s = 2; //sampling factor
 		ImagePlus imp, impFbp, impArtifact, impRef;
-		ParallelRecon120DegreeWithNoise obj = new ParallelRecon120DegreeWithNoise();
+		ParallelRecon120DegreeWithNoiseForPhantom obj = new ParallelRecon120DegreeWithNoiseForPhantom();
 		Grid2D phan, recon, reconLimited, artifact, sinogram, filteredSinogram;
 		Grid2D phanNoisy;
 		int numDet = 512;
@@ -41,67 +41,62 @@ public class ParallelRecon120DegreeWithNoise {
 		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, s, s);
 		RamLakKernel ramLak = new RamLakKernel(numDet, deltaS);
 		int idSave;
-		for(int imgIdx = 1; imgIdx <= 94; imgIdx++ )
+		for(int imgIdx = 0; imgIdx <= 249; imgIdx++ )
 		{
 			imgPath = folderPath + imgIdx + ".tif";
 			imp = IJ.openImage(imgPath);
 			phan = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
 			phan.getGridOperator().addBy(phan, 0.1f);
 			obj.addFOVCircle(phan);
-			for(int rotIdx = 0; rotIdx < 4; rotIdx++)
-			{
-				idSave = 1000 + (imgIdx - 1) * 4 + rotIdx;
-				if(rotIdx > 0)
-					phan = obj.rotateImage90Deg(phan);
-				if(imgIdx == 1 && rotIdx == 0)
-					phan.clone().show("phan");
-				sinogram = projector.projectRayDrivenCL(phan);
-				if(imgIdx == 1 && rotIdx == 0)
-					sinogram.show("The Sinogram");
-				filteredSinogram = new Grid2D(sinogram);
-				for (int theta = 0; theta < sinogram.getSize()[1]; ++theta) {
-					ramLak.applyToGrid(filteredSinogram.getSubGrid(theta));
-				}
-				if(imgIdx == 1 && rotIdx == 0)
-					filteredSinogram.show("The Filtered Sinogram");
-				recon = backproj.backprojectPixelDriven(filteredSinogram);
-				if(imgIdx == 1 && rotIdx == 0)
-					recon.clone().show("recon");
-				
-				reconPath = referenceFolderPath + idSave + ".tif";
-				impRef = ImageUtil.wrapGrid(recon, null);
-				IJ.saveAs(impRef, "Tiff", reconPath);
-				
-//				phanNoisy = new Grid2D(phan);
-//				obj.addGaussianNoise(phanNoisy);
-//				sinogram = projector.projectRayDrivenCL(phanNoisy);				
-				obj.addPoissonNoise(sinogram, 1.0e6);
-
-				filteredSinogram = new Grid2D(sinogram);
-				for (int theta = 0; theta <= 120; ++theta) {
-					ramLak.applyToGrid(filteredSinogram.getSubGrid(theta));
-				}
-				for(int j = 121; j < sinogram.getSize()[1]; j++)
-					for(int i = 0; i < sinogram.getSize()[0]; i++)
-						filteredSinogram.setAtIndex(i, j, 0);
-				reconLimited = backproj.backprojectPixelDriven(filteredSinogram);
 		
-				if(imgIdx == 1 && rotIdx == 0)
-					reconLimited.clone().show("recon limited");
-				reconFbpPath = saveFolderPath + "data" + idSave + ".tif";
-				artifactPath = saveFolderPath + "data" + idSave + "_mask.tif";
-				impFbp = ImageUtil.wrapGrid(reconLimited, null);
-				IJ.saveAs(impFbp, "Tiff", reconFbpPath);
-				
-				reconLimited.getGridOperator().subtractBy(reconLimited, recon);
-				if(imgIdx == 1 && rotIdx == 0)
-					reconLimited.clone().show("artifact");
-				impArtifact = ImageUtil.wrapGrid(reconLimited, null);
-				IJ.saveAs(impArtifact, "Tiff", artifactPath);
-				System.out.print(imgIdx + "_" + rotIdx + " ");
+			idSave = 2000 + imgIdx;
+
+			if(imgIdx == 0)
+				phan.clone().show("phan");
+			sinogram = projector.projectRayDrivenCL(phan);
+			if(imgIdx == 0)
+				sinogram.show("The Sinogram");
+			filteredSinogram = new Grid2D(sinogram);
+			for (int theta = 0; theta < sinogram.getSize()[1]; ++theta) {
+				ramLak.applyToGrid(filteredSinogram.getSubGrid(theta));
 			}
-			System.out.println();
+			if(imgIdx == 0)
+				filteredSinogram.show("The Filtered Sinogram");
+			recon = backproj.backprojectPixelDriven(filteredSinogram);
+			if(imgIdx == 0)
+				recon.clone().show("recon");
+			
+			reconPath = referenceFolderPath + idSave + ".tif";
+			impRef = ImageUtil.wrapGrid(recon, null);
+			IJ.saveAs(impRef, "Tiff", reconPath);
+			
+			
+			obj.addPoissonNoise(sinogram, 1.0e6);
+
+			filteredSinogram = new Grid2D(sinogram);
+			for (int theta = 0; theta <= 120; ++theta) {
+				ramLak.applyToGrid(filteredSinogram.getSubGrid(theta));
+			}
+			for(int j = 121; j < sinogram.getSize()[1]; j++)
+				for(int i = 0; i < sinogram.getSize()[0]; i++)
+					filteredSinogram.setAtIndex(i, j, 0);
+			reconLimited = backproj.backprojectPixelDriven(filteredSinogram);
+	
+			if(imgIdx == 0)
+				reconLimited.clone().show("recon limited");
+			reconFbpPath = saveFolderPath + "data" + idSave + ".tif";
+			artifactPath = saveFolderPath + "data" + idSave + "_mask.tif";
+			impFbp = ImageUtil.wrapGrid(reconLimited, null);
+			IJ.saveAs(impFbp, "Tiff", reconFbpPath);
+			
+			reconLimited.getGridOperator().subtractBy(reconLimited, recon);
+			if(imgIdx == 0)
+				reconLimited.clone().show("artifact");
+			impArtifact = ImageUtil.wrapGrid(reconLimited, null);
+			IJ.saveAs(impArtifact, "Tiff", artifactPath);
+			System.out.print(imgIdx + " ");
 		}
+		System.out.println();
 		System.out.println("Finished!");
 		
 	}
