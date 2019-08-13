@@ -14,8 +14,8 @@ public class GenerateBlueGreenAlgaePhantom {
 		BlueGreenAlgaePhantom phanObj = new BlueGreenAlgaePhantom(512, 512, 512, 100, 200);
 		Grid3D phan;
 		
-//		phan= phanObj.getNumericalPhantom();
-//		phan.show("algae");
+		phan= phanObj.getNumericalPhantom();
+		phan.show("algae");
 		
 		ImagePlus imp;
 		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantoms\\";

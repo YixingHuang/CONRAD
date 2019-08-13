@@ -16,15 +16,15 @@ import ij.ImagePlus;
  *
  */
 
-public class ParallelRecon120DegreeWithNoiseForPhantom {
-	static int startAngle = 30;
+public class ParallelRecon100DegreeWithNoiseForPhantom {
+	static int startAngle = 41;
 
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
 		
-		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantomSlices\\";
+		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\TomoSlicesProcessed\\";
 		String imgPath;
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantomSlicesRecons\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\TomoSlicesRecons100Deg\\";
 		String referenceFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\referenceRecons\\";
 		String reconFbpPath;
 		String artifactPath;
@@ -33,7 +33,7 @@ public class ParallelRecon120DegreeWithNoiseForPhantom {
 		int sizeY = sizeX;
 		int s = 2; //sampling factor
 		ImagePlus imp, impFbp, impArtifact, impRef;
-		ParallelRecon120DegreeWithNoiseForPhantom obj = new ParallelRecon120DegreeWithNoiseForPhantom();
+		ParallelRecon100DegreeWithNoiseForPhantom obj = new ParallelRecon100DegreeWithNoiseForPhantom();
 		Grid2D phan, recon, reconLimited, artifact, sinogram, filteredSinogram;
 		Grid2D phanNoisy;
 		int numDet = 512;
@@ -42,15 +42,15 @@ public class ParallelRecon120DegreeWithNoiseForPhantom {
 		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, s, s);
 		RamLakKernel ramLak = new RamLakKernel(numDet, deltaS);
 		int idSave;
-		for(int imgIdx = 0; imgIdx <= 249; imgIdx++ )
+		for(int imgIdx = 0; imgIdx <= 139; imgIdx++ )
 		{
 			imgPath = folderPath + imgIdx + ".tif";
 			imp = IJ.openImage(imgPath);
 			phan = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-			phan.getGridOperator().addBy(phan, 0.1f);
+			phan.getGridOperator().addBy(phan, 0.15f);
 			obj.addFOVCircle(phan);
-			//phan = obj.rotateImage90Deg(phan, imgIdx % 4 + 1);
-			idSave = 2000 + imgIdx;
+			phan = obj.rotateImage90Deg(phan, imgIdx % 4 + 1);
+			idSave = 3000 + imgIdx + 500;
 
 			if(imgIdx == 0)
 				phan.clone().show("phan");
@@ -81,10 +81,10 @@ public class ParallelRecon120DegreeWithNoiseForPhantom {
 				{
 					filteredSinogram.setAtIndex(i, theta, 0);
 				}
-			for (int theta = startAngle; theta <= 120 + startAngle; ++theta) {
+			for (int theta = startAngle; theta < 100 + startAngle; ++theta) {
 				ramLak.applyToGrid(filteredSinogram.getSubGrid(theta));
 			}
-			for(int j = 121 + startAngle; j < sinogram.getSize()[1]; j++)
+			for(int j = 100 + startAngle; j < sinogram.getSize()[1]; j++)
 				for(int i = 0; i < sinogram.getSize()[0]; i++)
 					filteredSinogram.setAtIndex(i, j, 0);
 			reconLimited = backproj.backprojectPixelDriven(filteredSinogram);

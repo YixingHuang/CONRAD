@@ -12,21 +12,21 @@ public class PreprocessImages {
 	public static void main(String[] args) {
 		new ImageJ();
 		
-		String imagePath1 = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCellsProcessed\\3.tif";
+		String imagePath1 = "D:\\Tasks\\FAU4\\CellImaging\\TomoSlices\\139.tif";
 		String imagePath2 = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCells\\37.png";
 		
 		PreprocessImages obj = new PreprocessImages();
 		ImagePlus imp;
 		imp = IJ.openImage(imagePath1);
 		Grid2D imgRaw = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-		float maxV = imgRaw.getGridOperator().max(imgRaw);
-		imgRaw.getGridOperator().divideBy(imgRaw, maxV);
+//		float maxV = imgRaw.getGridOperator().max(imgRaw);
+//		imgRaw.getGridOperator().divideBy(imgRaw, maxV);
 //		imgRaw = obj.downSampling(imgRaw);
 //		imgRaw = obj.downSampling(imgRaw);
 //		imgRaw = obj.downSampling(imgRaw);
 //		imgRaw.getGridOperator().multiplyBy(imgRaw, -1.f);
 //		imgRaw.getGridOperator().addBy(imgRaw, 1.0f);
-		obj.thresholding(imgRaw, 0.11f);
+//		obj.thresholding(imgRaw, 0.10f);
 		imgRaw.show();
 		
 		
@@ -46,7 +46,7 @@ public class PreprocessImages {
 					img.setAtIndex(i, j, imgRaw.getAtIndex(startX + i, startY + j));
 			img.clone().show("cropped image");
 			
-			obj.keepCircularROI(img, 312, 359, 120, 121, 0, 1.0f);
+			obj.keepCircularROI(img, 269, 251, 78, 78, 0, 0.56f);
 			img.clone().show("ROI image");
 			
 		}
@@ -84,7 +84,7 @@ public class PreprocessImages {
 	{
 		float rra = ra * ra;
 		float rrb = rb * rb;
-		float dx = 4 + (float)(Math.random() - 0.5) * 2.0f;
+		float dx = 3 + (float)(Math.random() - 0.5) * 2.0f;
 		float rra2 = (ra + dx) * (ra + dx);
 		float rrb2 = (rb + dx) * (rb + dx);
 		double a, b, rota, rotb, aa, bb;

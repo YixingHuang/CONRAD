@@ -29,7 +29,7 @@ public class SplitIntoSingleSlices {
 		int saveIndex, getIndex;
 		String path4, path5;
 		File outPutDir;
-		for(int idx = 1; idx<=18; idx ++){
+		for(int idx = 1; idx<=1; idx ++){
 			name1 = path + "reconLimited" + idx + ".tif";
 			//name2 = path + "reconGT" + idx + ".tif";
 			name2 = path + "artifacts" + idx + ".tif";
