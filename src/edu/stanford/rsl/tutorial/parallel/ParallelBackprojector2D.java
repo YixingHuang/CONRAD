@@ -49,7 +49,7 @@ public class ParallelBackprojector2D {
 		this.pxSzYMM = pxSzYMM;
 	}
 
-	void initSinogramParams(Grid2D sino) {
+	public void initSinogramParams(Grid2D sino) {
 		this.maxThetaIndex = sino.getSize()[1];
 		this.deltaTheta = sino.getSpacing()[1];
 		this.maxTheta = (maxThetaIndex -1) * deltaTheta;
@@ -239,6 +239,55 @@ public class ParallelBackprojector2D {
 					continue;
 				// get interpolated value
 				float val = InterpolationOperators.interpolateLinear(subgrid, s);
+				// sum value to sinogram
+				grid.addAtIndex(y, x, val);
+			}
+
+		}
+
+		// apply correct scaling
+		NumericPointwiseOperators.divideBy(grid, (float) (maxThetaIndex / Math.PI));
+		return grid;
+	}
+	
+	/**
+	 * Back-project one projection, note to initialize sinogram parameters first
+	 * 
+	 * @param sino
+	 * @param i
+	 * @return
+	 */
+	public Grid2D backprojectPixelDriven(Grid1D sino, int i) {
+		Grid2D grid = new Grid2D(this.imgSizeX, this.imgSizeY);
+		grid.setSpacing(pxSzXMM, pxSzYMM);
+		grid.setOrigin(-(grid.getSize()[0]*grid.getSpacing()[0])/2, -(grid.getSize()[1]*grid.getSpacing()[1])/2);
+
+		// compute actual value for theta
+		double theta = deltaTheta * i;
+		// precompute sine and cosines for faster computation
+		double cosTheta = Math.cos(theta);
+		double sinTheta = Math.sin(theta);
+		// get detector direction vector
+		SimpleVector dirDetector = new SimpleVector(cosTheta,sinTheta);
+		// loops over the image grid
+		for (int x = 0; x < grid.getSize()[0]; x++) {
+			for (int y = 0; y < grid.getSize()[1]; y++) {
+				// compute world coordinate of current pixel
+				double[] w = grid.indexToPhysical(x, y);
+				// wrap into vector
+				SimpleVector pixel = new SimpleVector(w[0], w[1]);
+				//  project pixel onto detector
+				double s = SimpleOperators.multiplyInnerProd(pixel, dirDetector);
+				// compute detector element index from world coordinates
+				s += maxS/2; // [mm]
+				s /= deltaS; // [GU]
+				// get detector grid
+				// check detector bounds, continue if out of array
+				if (sino.getSize()[0] <= s + 1
+						||  s < 0)
+					continue;
+				// get interpolated value
+				float val = InterpolationOperators.interpolateLinear(sino, s);
 				// sum value to sinogram
 				grid.addAtIndex(x, y, val);
 			}

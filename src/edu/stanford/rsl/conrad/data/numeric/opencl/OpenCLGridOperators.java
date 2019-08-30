@@ -1009,6 +1009,22 @@ public class OpenCLGridOperators extends NumericGridOperator {
 		}
 	}
 	
+	@Override
+	public void softThresholding(final NumericGrid gridA, float value) {
+		// not possible to have a grid that is not implementing OpenCLGridInterface
+		OpenCLGridInterface clGridA = (OpenCLGridInterface)gridA;
+
+		clGridA.getDelegate().prepareForDeviceOperation();
+		
+		// TODO check if both live on the same device.
+		CLDevice device = clGridA.getDelegate().getCLDevice(); 
+
+		CLBuffer<FloatBuffer> clmemA = clGridA.getDelegate().getCLBuffer();
+		
+		runKernel("softThreshold", device, clmemA, value);
+		clGridA.getDelegate().notifyDeviceChange();
+	}
+	
 	//TODO: Check the methods getAllInstances, getAllOpenCLGridOperatorProgramsAsString, and getCompleteRessourceAsString why they are necessary. 
 	
 	/**

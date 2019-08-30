@@ -957,7 +957,18 @@ public class TVOpenCLGridOperators extends OpenCLGridOperators{
 	
 
 
-	
+	public void penalizedWeightedLeastSquare(NumericGrid processed, NumericGrid proj, float sigma){
+		OpenCLGridInterface clProcessed = (OpenCLGridInterface)processed;
+		OpenCLGridInterface clProj = (OpenCLGridInterface)proj;
+		
+		clProcessed.getDelegate().prepareForDeviceOperation();
+		clProj.getDelegate().prepareForDeviceOperation();
+		CLDevice device = clProcessed.getDelegate().getCLDevice();
+
+		CLBuffer<FloatBuffer> clmemProcessed = clProcessed.getDelegate().getCLBuffer();
+		CLBuffer<FloatBuffer> clmemProj = clProj.getDelegate().getCLBuffer();
+		runKernel("penalizedWeightedLeastSquare",device,clmemProcessed, clmemProj, sigma, proj.getSize());
+	}
 	
 
 	

@@ -28,7 +28,7 @@ public class ParallelReconSymmetric100DegreeForCell {
 		ParallelReconSymmetric100DegreeForCell obj = new ParallelReconSymmetric100DegreeForCell();
 		
 		String path =  "D:\\Tasks\\FAU4\\CellImaging\\";
-		ImagePlus imp0 =IJ.openImage(path+"projections.tif");
+		ImagePlus imp0 =IJ.openImage(path+"projectionsPwls2Iter.tif");
 		Grid3D proj0 = ImageUtil.wrapImagePlus(imp0);
 		proj0.show("projections");
 		
@@ -37,7 +37,7 @@ public class ParallelReconSymmetric100DegreeForCell {
 		
 
 
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100Degree\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100DegreePwls\\";
 		String reconFbpPath;
 		String artifactPath;
 		int sizeX = 512;
@@ -101,7 +101,7 @@ public class ParallelReconSymmetric100DegreeForCell {
 		path4 = saveFolderPath + "reconFbp3D.tif";
 		IJ.saveAs(imp3D, "Tiff", path4);
 		System.out.println("\nFinished!");
-		Grid3D recon3D2 = obj.reorderProjections2(recon3D);
+		Grid3D recon3D2 = obj.reorderVolume(recon3D);
 		recon3D2.show("recon3D2");
 	}
 	
@@ -119,13 +119,13 @@ public class ParallelReconSymmetric100DegreeForCell {
 		return sino;	
 	}
 	
-	private Grid3D reorderProjections2(Grid3D proj){
+	private Grid3D reorderVolume(Grid3D proj){
 		
 		Grid3D sino = new Grid3D(proj.getSize()[1], proj.getSize()[2], proj.getSize()[0]);
 		for(int i = 0; i < proj.getSize()[0]; i++){
 			for(int j = 0; j < proj.getSize()[1]; j++) {
-				for(int k  = 0; k < proj.getSize()[1]; k++) {
-					sino.setAtIndex(k, j, i, proj.getAtIndex(i, j, k));
+				for(int k  = 0; k < proj.getSize()[2]; k++) {
+					sino.setAtIndex(j, k, i, proj.getAtIndex(i, j, k));
 				}
 			}
 		}

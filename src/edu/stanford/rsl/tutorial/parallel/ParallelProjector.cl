@@ -104,6 +104,171 @@ kernel void projectRayDriven2DCL(
 	return;
 }
 
+kernel void projectRayDriven2DCLWithSpacing(
+	image2d_t grid,
+	global float* sino,
+	/* not yet... float2 gridSpacing, */
+	float maxS,
+	float deltaS,
+	float maxTheta,
+	float deltaTheta,
+	int maxSIndex,
+	int maxThetaIndex,
+	float spacingX,
+	float spacingY
+	) {
+	// compute e, i from thread idx
+	const unsigned int e = get_global_id(0); // theta index
+	const unsigned int i = get_global_id(1); // s index
+	if (e > maxThetaIndex || i > maxSIndex) {
+		return;
+	}
+	float2 grid_spacing = {spacingX, spacingY};
+	const float samplingRate = 3.f; // # of samples per pixel
+	// compute theta [rad] and angular functions.
+	const float theta = deltaTheta * e;
+	const float cosTheta = cos(theta);
+	const float sinTheta = sin(theta);
+	
+	const int gridSizeX = get_image_width(grid);
+	const int gridSizeY = get_image_height(grid);
+	float2 gridXH = {gridSizeX/2.f * spacingX, gridSizeY/2.f * spacingY};
+
+	// compute s, the distance from the detector edge in WC [mm]
+	const float s = deltaS * i - maxS / 2.f;
+
+	// compute two points on the line through s and theta
+	// We use PointND for Points in 3D space and SimpleVector for directions.
+	// ensure p1 and p2 are outside of the image by setting t to a high value
+	float t1 = gridSizeX * spacingX * 1.5f;
+	float t2 = -t1;
+	float2 p1 = {(s * cosTheta) - (t1 * sinTheta), (s * sinTheta) + (t1 * cosTheta)};
+	float2 p2 = {(s * cosTheta) - (t2 * sinTheta), (s * sinTheta) + (t2 * cosTheta)};
+
+	//compute intersection between ray and object
+	float xmin = - gridSizeX * spacingX / 2.f;
+	float xmax = (gridSizeX -1 - gridSizeX / 2.f) * spacingX ;
+	float ymax = (gridSizeY -1 - gridSizeY / 2.f) * spacingY;
+	float ymin = - gridSizeY * spacingY / 2.f;
+	
+	float4 intersectionPoints = CohenSutherlandLineClip(p1.x, p1.y, p2.x, p2.y, xmin, ymin, xmax, ymax);
+	float2 start = {intersectionPoints.x, intersectionPoints.y};
+	float2 end   = {intersectionPoints.z, intersectionPoints.w};
+	if (isnan(intersectionPoints.x))
+	{
+		const int idx = i + e*maxSIndex;
+		sino[idx] = .0f;
+		return; // no intersection
+	}
+	// transform to grid coords
+	start += gridXH;
+	end   += gridXH;
+
+	// get the normalized increment
+	float2 increment = end - start;
+	float distance = length(increment);
+	increment /= (distance * samplingRate);
+
+	float sum = .0f;
+
+	// compute the integral along the line.
+	for (float t = 0.0; t < distance * samplingRate; t += 1.0f) {
+		float2 current = (start + increment * t) / grid_spacing;
+		current += POINT5;
+		sum += read_imagef(grid, linearSampler, current).x;
+	}
+
+	// normalize by the number of interpolation points
+	sum /= samplingRate;
+
+	// write integral value into the sinogram.
+	const int idx = i + e*maxSIndex;
+	sino[idx] = sum;
+	return;
+}
+
+
+kernel void projectRayDriven1DCL(
+	image2d_t grid,
+	global float* sino,
+	/* not yet... float2 gridSpacing, */
+	float maxS,
+	float deltaS,
+	float maxTheta,
+	float deltaTheta,
+	int maxSIndex,
+	int maxThetaIndex,
+	int e
+	) {
+	// compute i from thread idx
+	const unsigned int i = get_global_id(0); // s index
+	if (e > maxThetaIndex || i > maxSIndex) {
+		return;
+	}
+	
+	const float samplingRate = 3.f; // # of samples per pixel
+	// compute theta [rad] and angular functions.
+	const float theta = deltaTheta * e;
+	const float cosTheta = cos(theta);
+	const float sinTheta = sin(theta);
+	
+	const int gridSizeX = get_image_width(grid);
+	const int gridSizeY = get_image_height(grid);
+	float2 gridXH = {gridSizeX/2.f, gridSizeY/2.f};
+
+	// compute s, the distance from the detector edge in WC [mm]
+	const float s = deltaS * i - maxS / 2.f;
+
+	// compute two points on the line through s and theta
+	// We use PointND for Points in 3D space and SimpleVector for directions.
+	// ensure p1 and p2 are outside of the image by setting t to a high value
+	float t1 = gridSizeX * 1.5f;
+	float t2 = - t1;
+	float2 p1 = {(s * cosTheta) - (t1 * sinTheta), (s * sinTheta) + (t1 * cosTheta)};
+	float2 p2 = {(s * cosTheta) - (t2 * sinTheta), (s * sinTheta) + (t2 * cosTheta)};
+
+	//compute intersection between ray and object
+	float xmin = - gridSizeX / 2.f;
+	float xmax = gridSizeX -1 - gridSizeX / 2.f;
+	float ymax = gridSizeY -1 - gridSizeY / 2.f;
+	float ymin = - gridSizeY / 2.f;
+	
+	float4 intersectionPoints = CohenSutherlandLineClip(p1.x, p1.y, p2.x, p2.y, xmin, ymin, xmax, ymax);
+	float2 start = {intersectionPoints.x, intersectionPoints.y};
+	float2 end   = {intersectionPoints.z, intersectionPoints.w};
+	if (isnan(intersectionPoints.x))
+	{
+		const int idx = i + e*maxSIndex;
+		sino[idx] = .0f;
+		return; // no intersection
+	}
+	// transform to grid coords
+	start += gridXH;
+	end   += gridXH;
+
+	// get the normalized increment
+	float2 increment = end - start;
+	float distance = length(increment);
+	increment /= (distance * samplingRate);
+
+	float sum = .0f;
+
+	// compute the integral along the line.
+	for (float t = 0.0; t < distance * samplingRate; t += 1.0f) {
+		float2 current = (start + increment * t) / GRID_SPACING;
+		current += POINT5;
+		sum += read_imagef(grid, linearSampler, current).x;
+	}
+
+	// normalize by the number of interpolation points
+	sum /= samplingRate;
+
+	// write integral value into the sinogram.
+	const int idx = i;
+	sino[idx] = sum;
+	return;
+}
+
 inline OutCode ComputeOutCode(float x, float y, float xmin, float ymin, float xmax, float ymax)
 {
         OutCode code;

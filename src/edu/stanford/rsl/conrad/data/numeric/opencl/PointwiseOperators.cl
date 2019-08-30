@@ -577,3 +577,22 @@ kernel void divergencez(global float *grid, global float *gridBuf, const int siz
 	grid[zIdx] = -gridBuf[zIdxBuf];
 
 }
+
+kernel void softThreshold(global float *grid,  const float thres, int const num_elements )
+{
+    int global_id = get_global_id(0);
+    
+    if(global_id >= num_elements)
+        return;
+    if(isnan(grid[global_id]) || isnan(grid[global_id]))
+		grid[global_id] = 0;
+    else{
+    	if (grid[global_id] > thres)
+    		grid[global_id] = grid[global_id] - thres;
+    	else {if(grid[global_id] < -thres)
+    				grid[global_id] = grid[global_id] + thres;
+    			else
+    				grid[global_id] = 0;
+    				}
+    	}
+}

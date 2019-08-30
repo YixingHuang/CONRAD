@@ -20,7 +20,7 @@ import ij.ImagePlus;
  */
 
 public class ParallelReconSymmetric120DegreeForCell {
-	private int startAngle = 30;
+	private int startAngle = 20;
 
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
@@ -101,7 +101,7 @@ public class ParallelReconSymmetric120DegreeForCell {
 		path4 = saveFolderPath + "reconFbp3D.tif";
 		IJ.saveAs(imp3D, "Tiff", path4);
 		System.out.println("\nFinished!");
-		Grid3D recon3D2 = obj.reorderProjections2(recon3D);
+		Grid3D recon3D2 = obj.reorderVolume(recon3D);
 		recon3D2.show("recon3D2");
 	}
 	
@@ -119,7 +119,7 @@ public class ParallelReconSymmetric120DegreeForCell {
 		return sino;	
 	}
 	
-	private Grid3D reorderProjections2(Grid3D proj){
+	private Grid3D reorderVolume(Grid3D proj){
 		
 		Grid3D sino = new Grid3D(proj.getSize()[1], proj.getSize()[2], proj.getSize()[0]);
 		for(int i = 0; i < proj.getSize()[0]; i++){

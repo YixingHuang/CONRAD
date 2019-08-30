@@ -1178,5 +1178,23 @@ public class NumericGridOperator {
 
 		return (float) (Math.pow(luminance, alpha) * Math.pow(contrast, beta) * Math.pow(structure, gamma));
 	}
+	
+	public void softThresholding(NumericGrid grid, float value) {
+		// TODO Auto-generated method stub
+		NumericPointwiseIteratorND it = new NumericPointwiseIteratorND(grid);
+		float val;
+		while (it.hasNext())
+		{
+			val = it.get();
+			if(val < -value)
+				val = val + value;
+			else if(val > value)
+				val = val - value;
+			else
+				val = 0;
+			it.setNext(val);
+		}
+		grid.notifyAfterWrite();
+	}
 
 }

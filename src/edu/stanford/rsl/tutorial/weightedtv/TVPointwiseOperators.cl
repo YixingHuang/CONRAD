@@ -1452,3 +1452,73 @@ idx0=z*sizeX*sizeY+y*sizeX+x;
 UpGrid[idx]=DownGrid[idx0];
 }		
 }
+
+kernel void penalizedWeightedLeastSquare(global float* gridProcessed, global float* gridProj, const float sigma, const int sizeX, const int sizeY, const int sizeZ)
+{
+
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+	
+	
+	if((x >= sizeX) ||(y >= sizeY))
+	{
+		return;
+	}
+	float alpha = 1.0f;
+	float beta = 1.0f;
+	int idx;
+	float dxl, dxr, dyt, dyb;
+	float sigmaSquare = sigma * sigma;
+	float neighbor[4] = {0};
+	float weightNeighbor[4] = {0};
+	float sum = 0;
+	float weightSum = 0;
+	float variance = 0;
+
+	for(int z = 0; z < sizeZ; z++)
+	{
+		idx = z * sizeX * sizeY + y * sizeX + x;
+		if(x == 0)
+			neighbor[0] = gridProj[idx + 1];
+		else
+			neighbor[0] = gridProj[idx - 1];
+			
+		if(x == sizeX - 1)
+			neighbor[1] = gridProj[idx - 1];
+		else
+			neighbor[1] = gridProj[idx + 1];
+			
+		if(y == 0)
+			neighbor[2] = gridProj[idx + sizeX];
+		else
+			neighbor[2] = gridProj[idx - sizeX];
+			
+		if(y == sizeY - 1)
+			neighbor[3] = gridProj[idx - sizeX];
+		else
+			neighbor[3] = gridProj[idx + sizeX];
+			
+			
+		dxl = gridProj[idx] - neighbor[0];
+		dxr = gridProj[idx] - neighbor[1];
+		dyt = gridProj[idx] - neighbor[2];
+		dyb = gridProj[idx] - neighbor[3];
+		weightNeighbor[0] = (float) (exp(- dxl * dxl / sigmaSquare) * alpha);
+		weightNeighbor[1] = (float) (exp(- dxr * dxr / sigmaSquare) * alpha);
+		weightNeighbor[2] = (float) (exp(- dyt * dyt / sigmaSquare) * beta);
+		weightNeighbor[3] = (float) (exp(- dyb * dyb / sigmaSquare) * beta);
+		
+		sum = 0;
+		weightSum = 0;
+		for(int i = 0; i < 4; i ++)
+		{
+			sum = sum + weightNeighbor[i] * neighbor[i];
+			weightSum = weightSum + weightNeighbor[i];
+		}
+		variance = (float) (0.5 * exp(gridProj[idx] / 1.0f));
+		gridProcessed[idx] = (gridProj[idx] + variance * sum) / ( 1.0f + variance * weightSum);
+//		gridProcessed[idx] = 1;
+//		if(gridProcessed[idx] < 0.000001f)
+//			gridProcessed[idx] = 0;
+	}
+}

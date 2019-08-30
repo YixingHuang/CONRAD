@@ -243,6 +243,191 @@ public class ParallelProjector2D {
 
 		return sino;
 	}
+	
+	
+	public Grid2D projectRayDrivenCLWithSpacing(Grid2D grid, double[] spacing) {
+		boolean debug = false;
+		// create context
+		CLContext context = OpenCLUtil.createContext();
+		if (debug)
+			System.out.println("Context: " + context);
+		//show OpenCL devices in System
+		CLDevice[] devices = context.getDevices();
+		if (debug){
+			for (CLDevice dev: devices)
+				System.out.println(dev);
+		}
+		
+		// select device
+		CLDevice device = context.getMaxFlopsDevice();
+		if (debug)
+			System.out.println("Device: " + device);
+		
+		int imageSize = grid.getSize()[0] * grid.getSize()[1];
+		// Length of arrays to process
+		int localWorkSize = Math.min(device.getMaxWorkGroupSize(), 8); // Local work size dimensions
+		int globalWorkSizeT = OpenCLUtil.roundUp(localWorkSize, maxSIndex); // rounded up to the nearest multiple of localWorkSize
+		int globalWorkSizeBeta = OpenCLUtil.roundUp(localWorkSize, maxThetaIndex); // rounded up to the nearest multiple of localWorkSize
+
+		// load sources, create and build program
+		CLProgram program = null;
+		try {
+			program = context.createProgram(this.getClass().getResourceAsStream("ParallelProjector.cl"))
+					.build();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(-1);
+		}
+
+		// create image from input grid
+		CLImageFormat format = new CLImageFormat(ChannelOrder.INTENSITY, ChannelType.FLOAT);
+
+		CLBuffer<FloatBuffer> imageBuffer = context.createFloatBuffer(imageSize, Mem.READ_ONLY);
+//		for (int i = 0; i < grid.getSize()[0]; ++i) {
+//			imageBuffer.getBuffer().put(grid.getSubGrid(i).getBuffer());
+//		}
+		
+		for (int i=0;i<grid.getSize()[1];++i){
+			for (int j=0;j<grid.getSize()[0];++j)
+				imageBuffer.getBuffer().put(grid.getAtIndex(j, i));
+		}
+		imageBuffer.getBuffer().rewind();
+		CLImage2d<FloatBuffer> imageGrid = context.createImage2d(
+				imageBuffer.getBuffer(), grid.getSize()[0], grid.getSize()[1],
+				format);
+		imageBuffer.release();
+
+		// create memory for sinogram
+		CLBuffer<FloatBuffer> sinogram = context.createFloatBuffer(maxSIndex * maxThetaIndex, Mem.WRITE_ONLY);
+
+		// copy params
+		CLKernel kernel = program.createCLKernel("projectRayDriven2DCLWithSpacing");
+		kernel.putArg(imageGrid).putArg(sinogram)
+			.putArg((float)maxS).putArg((float)deltaS)
+			.putArg((float)maxTheta).putArg((float)deltaTheta)
+			.putArg(maxSIndex).putArg(maxThetaIndex).putArg((float)spacing[0]).putArg((float)spacing[1]); 
+
+		// createCommandQueue
+		CLCommandQueue queue = device.createCommandQueue();
+		queue
+			.putWriteImage(imageGrid, true)
+			.finish()
+			.put2DRangeKernel(kernel, 0, 0, globalWorkSizeBeta, globalWorkSizeT,
+					localWorkSize, localWorkSize).putBarrier()
+			.putReadBuffer(sinogram, true)
+			.finish();
+
+		// write sinogram back to grid2D
+		Grid2D sino = new Grid2D(new float[maxThetaIndex*maxSIndex], maxSIndex, maxThetaIndex);
+		sino.setSpacing(deltaS, deltaTheta);
+		sinogram.getBuffer().rewind();
+		for (int i = 0; i < sino.getBuffer().length; ++i) {
+			sino.getBuffer()[i] = sinogram.getBuffer().get();
+	}
+
+		// clean up
+		queue.release();
+		imageGrid.release();
+		sinogram.release();
+		kernel.release();
+		program.release();
+		context.release();
+
+		return sino;
+	}
+	
+	
+	public Grid1D projectRayDriven1DCL(Grid2D grid, int index) {
+		boolean debug = false;
+		// create context
+		CLContext context = OpenCLUtil.createContext();
+		if (debug)
+			System.out.println("Context: " + context);
+		//show OpenCL devices in System
+		CLDevice[] devices = context.getDevices();
+		if (debug){
+			for (CLDevice dev: devices)
+				System.out.println(dev);
+		}
+		
+		// select device
+		CLDevice device = context.getMaxFlopsDevice();
+		if (debug)
+			System.out.println("Device: " + device);
+		
+		int imageSize = grid.getSize()[0] * grid.getSize()[1];
+		// Length of arrays to process
+		int localWorkSize = Math.min(device.getMaxWorkGroupSize(), 8); // Local work size dimensions
+		int globalWorkSizeT = OpenCLUtil.roundUp(localWorkSize, maxSIndex); // rounded up to the nearest multiple of localWorkSize
+		//int globalWorkSizeBeta = OpenCLUtil.roundUp(localWorkSize, maxThetaIndex); // rounded up to the nearest multiple of localWorkSize
+
+		// load sources, create and build program
+		CLProgram program = null;
+		try {
+			program = context.createProgram(this.getClass().getResourceAsStream("ParallelProjector.cl"))
+					.build();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(-1);
+		}
+
+		// create image from input grid
+		CLImageFormat format = new CLImageFormat(ChannelOrder.INTENSITY, ChannelType.FLOAT);
+
+		CLBuffer<FloatBuffer> imageBuffer = context.createFloatBuffer(imageSize, Mem.READ_ONLY);
+//		for (int i = 0; i < grid.getSize()[0]; ++i) {
+//			imageBuffer.getBuffer().put(grid.getSubGrid(i).getBuffer());
+//		}
+		
+		for (int i=0;i<grid.getSize()[1];++i){
+			for (int j=0;j<grid.getSize()[0];++j)
+				imageBuffer.getBuffer().put(grid.getAtIndex(j, i));
+		}
+		imageBuffer.getBuffer().rewind();
+		CLImage2d<FloatBuffer> imageGrid = context.createImage2d(
+				imageBuffer.getBuffer(), grid.getSize()[0], grid.getSize()[1],
+				format);
+		imageBuffer.release();
+
+		// create memory for sinogram
+		CLBuffer<FloatBuffer> sinogram = context.createFloatBuffer(maxSIndex, Mem.WRITE_ONLY);
+
+		// copy params
+		CLKernel kernel = program.createCLKernel("projectRayDriven1DCL");
+		kernel.putArg(imageGrid).putArg(sinogram)
+			.putArg((float)maxS).putArg((float)deltaS)
+			.putArg((float)maxTheta).putArg((float)deltaTheta)
+			.putArg(maxSIndex).putArg(maxThetaIndex).putArg(index); // TODO: Spacing :)
+
+		// createCommandQueue
+		CLCommandQueue queue = device.createCommandQueue();
+		queue
+			.putWriteImage(imageGrid, true)
+			.finish()
+			.put1DRangeKernel(kernel, 0, globalWorkSizeT, localWorkSize).putBarrier()
+			.putReadBuffer(sinogram, true)
+			.finish();
+
+		// write sinogram back to grid2D
+		Grid1D sino = new Grid1D(maxSIndex);
+		sino.setSpacing(deltaS);
+		sinogram.getBuffer().rewind();
+		for (int i = 0; i < sino.getBuffer().length; ++i) {
+			sino.setAtIndex(i, sinogram.getBuffer().get());
+	}
+
+		// clean up
+		queue.release();
+		imageGrid.release();
+		sinogram.release();
+		kernel.release();
+		program.release();
+		context.release();
+
+		return sino;
+	}
 
 	/**
 	 * The pixel driven solution.
