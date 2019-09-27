@@ -23,7 +23,7 @@ import ij.ImagePlus;
  */
 
 public class IterativeReconForCell {
-	private int iterMax = 10;
+	private int iterMax = 1;
 	private int maxTVIter = 10;
 	private int startAngle = 20;
 	private int angularRange = 100;
@@ -116,7 +116,7 @@ public class IterativeReconForCell {
 			for(int iter = 0; iter < obj.iterMax; iter ++)
 			{
 				obj.runSart();
-				obj.runWTV();	
+				//obj.runWTV();	
 				System.out.print(" " + iter);
 				if(iter == 0)
 					obj.recon.show("recon");
@@ -146,7 +146,7 @@ public class IterativeReconForCell {
 
 	private void runSart()
 	{
-		float beta = -0.001f/gridMean;
+		float beta = -0.1f/gridMean;
 		int startIdx = startAngle + 20;
 		int endIdx = startAngle + 20 + angularRange + 1;
 		if(isInitial)
@@ -157,8 +157,12 @@ public class IterativeReconForCell {
 		for(int projIdx = startIdx; projIdx < endIdx; projIdx ++)
 		{
 			sino1D = projector.projectRayDriven1DCL(recon, projIdx);
-//			if(projIdx < 45)
-//				sino1D.clone().show("sino1D");
+			//if(projIdx < 25 &&  projIdx > 20) {
+			if(projIdx < 5) {
+				sino1D.clone().show("sino1D" + projIdx);
+				sinogram.getSubGrid(projIdx).clone().show("sino" + projIdx);
+			}
+				
 			sino1D.getGridOperator().subtractBy(sino1D, sinogram.getSubGrid(projIdx));
 		
 			if(projIdx < startAngle + 20 || projIdx >= startAngle + 20 + angularRange)

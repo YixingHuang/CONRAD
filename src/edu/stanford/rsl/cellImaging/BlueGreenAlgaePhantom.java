@@ -130,7 +130,7 @@ public class BlueGreenAlgaePhantom {
 	
 	private void generateEllipsoids(){
 		ellipsoids = new double[numCyano + numNano + numPetal + 2][10];
-		double r = 0.7; //cell wall inner radius
+		double r = 0.6; //cell wall inner radius
 		double r2 = r + 0.02; //cell wall outer radius
 		double[][] cellWall =
 				// { delta_x, delta_y, delta_z,        a,       b,       c,            phi,  theta,  psi,     rho }

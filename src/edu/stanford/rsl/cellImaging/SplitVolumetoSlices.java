@@ -18,8 +18,8 @@ public class SplitVolumetoSlices {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
-		String path = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantoms\\";
-		String path2 = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantomSlices\\";
+		String path = "D:\\Tasks\\FAU4\\CellImaging\\\\FOVRecon\\AlgaePhantoms\\";
+		String path2 = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon\\AlgaePhantomSlices\\";
 		
 		ImagePlus imp1;
 		String name1, saveName1;

@@ -19,16 +19,17 @@ import ij.ImagePlus;
  *
  */
 
-public class ParallelReconSymmetric100DegreeForCell {
+public class ParallelReconFromCombinedProjectionsForCell {
 	private int startAngle = 20;
 
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
+		//float scale = 40.0f*180.0f/160.0f;
+		float scale = 1;
+		ParallelReconFromCombinedProjectionsForCell obj = new ParallelReconFromCombinedProjectionsForCell();
 		
-		ParallelReconSymmetric100DegreeForCell obj = new ParallelReconSymmetric100DegreeForCell();
-		
-		String path =  "D:\\Tasks\\FAU4\\CellImaging\\";
-		ImagePlus imp0 =IJ.openImage(path+"projectionsPwls2Iter.tif");
+		String path = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeTestPhantomNoise10e4\\TestSlicesPWLS2\\CombineProjections\\";
+		ImagePlus imp0 =IJ.openImage(path+"sino3DReo.tif");
 		Grid3D proj0 = ImageUtil.wrapImagePlus(imp0);
 		proj0.show("projections");
 		
@@ -37,25 +38,24 @@ public class ParallelReconSymmetric100DegreeForCell {
 		
 
 
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon\\FbpCellRecons100DegreePwls2\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeTestPhantomNoise10e4\\TestSlicesPWLS2\\";
 		String reconFbpPath;
 		String artifactPath;
 		int sizeX = 512;
 		int sizeY = sizeX;
 		int s = 2; //sampling factor
-		float sx = 1.4f;
 		int zs = 1;
 		ImagePlus impFbp, imp3D;
 		Grid2D recon, sinogram, filteredSinogram;
 		int numDet = 512;
 		double deltaS = 1;
-		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, sx, sx);
+		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, s, s);
 		RamLakKernel ramLak = new RamLakKernel(numDet, deltaS);
 		int idSave;
 		Grid3D recon3D = new Grid3D(sizeX/s, sizeY/s, sinos.getSize()[2]/zs);
 		String path2, path3, path4;
 		File outPutDir;
-		float scale = 40.0f*180.0f/160.0f;
+		
 		Grid2D sinoPadd;
 		for(int imgIdx = 0; imgIdx < sinos.getSize()[2]; imgIdx = imgIdx + zs )
 		{
@@ -71,50 +71,39 @@ public class ParallelReconSymmetric100DegreeForCell {
 				ramLak.applyToGrid(filteredSinogram.getSubGrid(theta));
 			}
 			
-			sinoPadd = obj.zeroPaddingProjections(filteredSinogram, obj.startAngle);
-			recon = backproj.backprojectPixelDriven(sinoPadd);
+	
+			recon = backproj.backprojectPixelDriven(filteredSinogram);
 			recon.getGridOperator().multiplyBy(recon, scale);
 			if(imgIdx == 0)
 				recon.clone().show("recon");
 			
 			
-			path2 = saveFolderPath + idSave + "\\";
-			outPutDir = new File(path2);
-			if(!outPutDir.exists()){
-		    outPutDir.mkdirs();
-			}
+//			path2 = saveFolderPath + idSave + "\\";
+//			outPutDir = new File(path2);
+//			if(!outPutDir.exists()){
+//		    outPutDir.mkdirs();
+//			}
 		    
-			reconFbpPath = path2 + "data" + idSave + ".tif";
-			artifactPath = path2 + "data" + idSave + "_mask.tif";
-			impFbp = ImageUtil.wrapGrid(recon, null);
-			IJ.saveAs(impFbp, "Tiff", reconFbpPath);
-			IJ.saveAs(impFbp, "Tiff", artifactPath);
+//			reconFbpPath = path2 + "data" + idSave + ".tif";
+//			artifactPath = path2 + "data" + idSave + "_mask.tif";
+//			impFbp = ImageUtil.wrapGrid(recon, null);
+//			IJ.saveAs(impFbp, "Tiff", reconFbpPath);
+//			IJ.saveAs(impFbp, "Tiff", artifactPath);
 			recon3D.setSubGrid(imgIdx/zs, (Grid2D)recon.clone());
 			System.out.print(imgIdx + " ");			
 		}
-		path3 = saveFolderPath + "evaluation\\";
-		outPutDir = new File(path3);
-		if(!outPutDir.exists()){
-	    outPutDir.mkdirs();
-		}
+//		path3 = saveFolderPath + "evaluation\\";
+//		outPutDir = new File(path3);
+//		if(!outPutDir.exists()){
+//	    outPutDir.mkdirs();
+//		}
 		recon3D.show("recon3D");
 		imp3D = ImageUtil.wrapGrid3D(recon3D, null);
-		path4 = saveFolderPath + "reconFbp3D2Iter.tif";
+		path4 = saveFolderPath + "reconFbp3DCombined.tif";
 		IJ.saveAs(imp3D, "Tiff", path4);
 		System.out.println("\nFinished!");
-		if(s == 2)
-			recon3D = obj.downSamplingZ(recon3D);
 		Grid3D recon3D2 = obj.reorderVolume(recon3D);
 		recon3D2.show("recon3D2");
-	}
-	
-	private Grid3D downSamplingZ(Grid3D vol)
-	{
-		Grid3D vol2 = new Grid3D(vol.getSize()[0], vol.getSize()[1], vol.getSize()[2]/2);
-		for(int i = 0; i < vol2.getSize()[2]; i++)
-			vol2.setSubGrid(i, (Grid2D)vol.getSubGrid(i * 2).clone());
-		
-		return vol2;
 	}
 	
 	private Grid3D reorderProjections(Grid3D proj){

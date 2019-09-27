@@ -1,6 +1,9 @@
 package edu.stanford.rsl.cellImaging;
 
+import java.io.File;
+
 import edu.stanford.rsl.conrad.data.numeric.Grid2D;
+import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 import edu.stanford.rsl.conrad.filtering.PoissonNoiseFilteringTool;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
 import edu.stanford.rsl.tutorial.filters.RamLakKernel;
@@ -16,45 +19,40 @@ import ij.ImagePlus;
  *
  */
 
-public class ParallelRecon100DegreeWithNoiseForPhantom {
+public class ParallelRecon100DegreeMicroSphereNoNoise {
 	static int startAngle = 41;
 
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
+		String dataPath = "D:\\Tasks\\FAU4\\CellImaging\\microSphere512.tif";
+		ImagePlus imp0 =IJ.openImage(dataPath);
+		Grid3D data = ImageUtil.wrapImagePlus(imp0);
 		
-		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCellsProcessed3\\";
-		String imgPath;
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon\\TrainingData\\";
-		String referenceFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon\\referenceRecons\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpReconsMicroSphere\\";
+		String referenceFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\referenceReconsMicroSphere\\";
 		String reconFbpPath;
 		String artifactPath;
 		String reconPath;
 		int sizeX = 512;
 		int sizeY = sizeX;
 		int s = 2; //sampling factor
-		float sx = 1.4f;
+		int zs = 1;
+		Grid3D recon3D = new Grid3D(sizeX/s, sizeY/s, data.getSize()[2]/zs);
 		ImagePlus imp, impFbp, impArtifact, impRef;
-		ParallelRecon100DegreeWithNoiseForPhantom obj = new ParallelRecon100DegreeWithNoiseForPhantom();
+		ParallelRecon100DegreeMicroSphereNoNoise obj = new ParallelRecon100DegreeMicroSphereNoNoise();
 		Grid2D phan, recon, reconLimited, artifact, sinogram, filteredSinogram;
-		Grid2D phanNoisy;
 		int numDet = 512;
 		double deltaS = 1;
 		ParallelProjector2D projector = new ParallelProjector2D(Math.PI, Math.PI/180.0, numDet * deltaS, deltaS);
-		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, sx, sx);
+		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, s, s);
 		RamLakKernel ramLak = new RamLakKernel(numDet, deltaS);
 		int idSave;
-		for(int imgIdx = 1; imgIdx <= 125; imgIdx++ )
+		File outPutDir;
+		String path2;
+		for(int imgIdx = 0; imgIdx < 512; imgIdx = imgIdx + zs )
 		{
-			imgPath = folderPath + imgIdx + ".tif";
-			imp = IJ.openImage(imgPath);
-			phan = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-			phan.getGridOperator().addBy(phan, 0.15f);
-			obj.addFOVCircle(phan);
-			phan = obj.rotateImage90Deg(phan, imgIdx % 4 );
-			idSave = 4000 + imgIdx;
-
-			if(imgIdx == 0)
-				phan.clone().show("phan");
+			idSave = imgIdx;
+			phan = (Grid2D)data.getSubGrid(imgIdx).clone();
 			sinogram = projector.projectRayDrivenCL(phan);
 			if(imgIdx == 0)
 				sinogram.show("The Sinogram");
@@ -74,7 +72,7 @@ public class ParallelRecon100DegreeWithNoiseForPhantom {
 			IJ.saveAs(impRef, "Tiff", reconPath);
 			
 			
-			obj.addPoissonNoise(sinogram, 1.0e4);
+			//obj.addPoissonNoise(sinogram, 1.0e5);
 
 			filteredSinogram = new Grid2D(sinogram);
 			for(int theta = 0; theta < startAngle; theta ++)
@@ -92,8 +90,14 @@ public class ParallelRecon100DegreeWithNoiseForPhantom {
 	
 			if(imgIdx == 0)
 				reconLimited.clone().show("recon limited");
-			reconFbpPath = saveFolderPath + "data" + idSave + ".tif";
-			artifactPath = saveFolderPath + "data" + idSave + "_mask.tif";
+			recon3D.setSubGrid(imgIdx/zs, (Grid2D)reconLimited.clone());
+			path2 = saveFolderPath + idSave + "\\";
+			outPutDir = new File(path2);
+			if(!outPutDir.exists()){
+		    outPutDir.mkdirs();
+			}
+			reconFbpPath = path2 + "data" + idSave + ".tif";
+			artifactPath = path2 + "data" + idSave + "_mask.tif";
 			impFbp = ImageUtil.wrapGrid(reconLimited, null);
 			IJ.saveAs(impFbp, "Tiff", reconFbpPath);
 			
@@ -102,43 +106,24 @@ public class ParallelRecon100DegreeWithNoiseForPhantom {
 				reconLimited.clone().show("artifact");
 			impArtifact = ImageUtil.wrapGrid(reconLimited, null);
 			IJ.saveAs(impArtifact, "Tiff", artifactPath);
+			
 			System.out.print(imgIdx + " ");
 		}
+		String path3 = saveFolderPath + "evaluation\\";
+		outPutDir = new File(path3);
+		if(!outPutDir.exists()){
+	    outPutDir.mkdirs();
+		}
+		
+		ImagePlus imp3D = ImageUtil.wrapGrid3D(recon3D, null);
+		String path4 = saveFolderPath + "reconFbp3D.tif";
+		IJ.saveAs(imp3D, "Tiff", path4);
 		System.out.println();
 		System.out.println("Finished!");
 		
 	}
 	
-	private Grid2D rotateImage90Deg(Grid2D img, int tag)
-	{
-		int sizeX = img.getSize()[0];
-		int sizeY = img.getSize()[1];
-		Grid2D imgRot = new Grid2D(img);
-		switch (tag)
-		{
-		case 1:
-			for(int i = 0; i < img.getSize()[0]; i++)
-				for(int j = 0; j < img.getSize()[1]; j++)
-					imgRot.setAtIndex(sizeY - 1 - j, i, img.getAtIndex(i, j));
-			break;
-		case 2:
-			for(int i = 0; i < img.getSize()[0]; i++)
-				for(int j = 0; j < img.getSize()[1]; j++)
-					imgRot.setAtIndex(sizeX - 1 - i, sizeY - 1 - j, img.getAtIndex(i, j));
-			break;
-		case 3:
-			for(int i = 0; i < img.getSize()[0]; i++)
-				for(int j = 0; j < img.getSize()[1]; j++)
-					imgRot.setAtIndex(j, sizeX - 1 - i, img.getAtIndex(i, j));
-			break;
-		default:
-			break;
-		}
-		
-		
-		
-		return imgRot;
-	}
+	
 	
 	private void addPoissonNoise(Grid2D sinogram, double d) throws Exception{
 		double val;
@@ -167,35 +152,6 @@ public class ParallelRecon100DegreeWithNoiseForPhantom {
 		sinogram.getGridOperator().multiplyBy(sinogram, amp);
 	}
 	
-	private void addGaussianNoise(Grid2D phan)
-	{
-		java.util.Random r = new java.util.Random();
-		double variance = 0.001;
-		double mean = 0;
-		double noise;
-		for(int i = 0; i < phan.getSize()[0]; i++)
-			for(int j = 0; j < phan.getSize()[1]; j++)
-			{
-				
-				noise = r.nextGaussian() * Math.sqrt(variance) + mean;
-				phan.setAtIndex(i, j, phan.getAtIndex(i, j) + (float) noise);
-			}
-	}
 	
-	private void addFOVCircle(Grid2D phan)
-	{
-		float r = (phan.getSize()[0] - 1.0f)/2.0f;
-		float rr = r * r;
-		float xCent = r;
-		float yCent = xCent;
-		float dd;
-		for(int i = 0; i < phan.getSize()[0]; i ++)
-			for(int j = 0; j < phan.getSize()[1]; j ++)
-			{
-				dd = (i - xCent) * (i - xCent) + (j - yCent) * (j - yCent);
-				if(dd <= rr && dd > rr - 250)
-					phan.setAtIndex(i, j, 1.0f);
-			}
-	}
 	
 }

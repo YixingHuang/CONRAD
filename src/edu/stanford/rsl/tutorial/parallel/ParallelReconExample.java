@@ -21,8 +21,8 @@ public class ParallelReconExample {
 	public static void main (String [] args){
 		new ImageJ();
 		
-		int x = 200;
-		int y = 200;
+		int x = 512;
+		int y = 512;
 		// Create a phantom
 		Phantom phan = new DotsGrid2D(x, y);
 		//phan = new UniformCircleGrid2D(x, y);
@@ -44,7 +44,7 @@ public class ParallelReconExample {
 		filteredSinogram.show("The Filtered Sinogram");
 		
 		// Backproject and show
-		ParallelBackprojector2D backproj = new ParallelBackprojector2D(200, 200, 1, 1);
+		ParallelBackprojector2D backproj = new ParallelBackprojector2D(x, y, 1, 1);
 		backproj.backprojectPixelDriven(filteredSinogram).show("The Reconstruction");
 		
 	}

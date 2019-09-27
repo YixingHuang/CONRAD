@@ -18,9 +18,9 @@ public class GenerateBlueGreenAlgaePhantom {
 		phan.show("algae");
 		
 		ImagePlus imp;
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantoms\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon\\AlgaePhantoms\\";
 		String saveName;
-		for(int i = 1; i <= 10; i++)
+		for(int i = 0; i <= 11; i++)
 		{
 			phanObj.resetVolume();
 			phan = phanObj.getNumericalPhantom();

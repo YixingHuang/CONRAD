@@ -22,9 +22,9 @@ import ij.ImagePlus;
  *
  */
 
-public class CombineProjections {
+public class CombineProjectionsPhantom {
 
-	private int startAngle = 20;
+	private int startAngle = 0;
 	private int angularRange = 100;
 	private ParallelProjector2D projector;
 
@@ -43,22 +43,21 @@ public class CombineProjections {
 
 	private boolean isInitial = true;
 	private Grid3D reconUNet;
-	private String initialPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100Degree\\reconSEUNet500Epoch20190917.tif";
-	private String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100Degree\\CombineProjections\\";
+	private String initialPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeTestPhantomNoise10e4\\TestSlicesPWLS2\\SEUNetPwls2.tif";
+	private String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeTestPhantomNoise10e4\\TestSlicesPWLS2\\CombineProjections\\";
 	
 	
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
 		
-		CombineProjections obj = new CombineProjections();
+		CombineProjectionsPhantom obj = new CombineProjectionsPhantom();
 		
-		String path =  "D:\\Tasks\\FAU4\\CellImaging\\";
-		ImagePlus imp0 =IJ.openImage(path+"projections.tif");
-		Grid3D proj0 = ImageUtil.wrapImagePlus(imp0);
-		proj0.show("projections");
+		String path =  "D:\\Tasks\\FAU4\\CellImaging\\AlgaeTestPhantomNoise10e4\\sinogramsProcessed\\";
+		ImagePlus imp0 =IJ.openImage(path+"sinogramsPwls2.tif");
+		Grid3D sinos = ImageUtil.wrapImagePlus(imp0);
+		sinos.show("sino3D");
 		
-		Grid3D sinos = obj.reorderProjections(proj0);
-		
+
 		if(obj.isInitial)
 		{
 			obj.reconUNet = obj.read3DVolume(obj.initialPath);
@@ -78,8 +77,7 @@ public class CombineProjections {
 		Grid3D recon3D = new Grid3D(obj.sizeX/obj.s, obj.sizeY/obj.s, sinos.getSize()[2]/obj.zs);
 		String path4;
 
-		float scale = 40.0f*180.0f/160.0f;
-	
+
 		obj.recon = new Grid2D(obj.sizeX/obj.s, obj.sizeY/obj.s);
 	
 		
@@ -96,7 +94,6 @@ public class CombineProjections {
 			if(obj.isInitial)
 			{
 				obj.recon = (Grid2D)obj.reconUNet.getSubGrid(imgIdx).clone();
-				obj.recon.getGridOperator().divideBy(obj.recon, scale);
 			}
 			else
 				obj.recon.getGridOperator().fill(obj.recon, 0);
@@ -179,10 +176,10 @@ public class CombineProjections {
 		for(int j = 0; j < sinoComb.getSize()[1]; j++)
 			for(int i = 0; i < sinoComb.getSize()[0]; i++)
 			{
-				if(j < startAngle + 20 || j >  angularRange + startAngle + 20)
+				if(j < 40 || j >  angularRange + 40)
 					sinoComb.setAtIndex(i, j, sinoRep.getAtIndex(i, j));
 				else
-					sinoComb.setAtIndex(i, j, sinoRaw.getAtIndex(i, j - 20));
+					sinoComb.setAtIndex(i, j, sinoRaw.getAtIndex(i, j));
 			}
 				
 		

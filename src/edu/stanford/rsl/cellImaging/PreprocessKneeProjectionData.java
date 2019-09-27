@@ -10,23 +10,25 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import edu.stanford.rsl.tutorial.pwls.PenalizedWeightedLeastSquare;
 
-public class PreprocessProjectionData {
+public class PreprocessKneeProjectionData {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
-		String path =  "D:\\Tasks\\FAU4\\CellImaging\\";
-		ImagePlus imp0 =IJ.openImage(path+"projections.tif");
+		//String path =  "D:\\Tasks\\FAU4\\CellImaging\\projections.tif";
+		String path =  "D:\\Tasks\\FAU4\\KneeImaging\\DataIterativeReco\\projections_flipVertically_NoBeads.tif";
+		ImagePlus imp0 =IJ.openImage(path);
 		Grid3D proj0 = ImageUtil.wrapImagePlus(imp0);
 		proj0.show("projections");
 		
 		OpenCLGrid3D projCL = new OpenCLGrid3D(proj0);
 		Grid3D projProcessed = new Grid3D(proj0.getSize()[0], proj0.getSize()[1], proj0.getSize()[2]);
 		OpenCLGrid3D projProcessedCL = new OpenCLGrid3D(projProcessed);
-		PenalizedWeightedLeastSquare pwls= new PenalizedWeightedLeastSquare(0.25f, 2);
+		PenalizedWeightedLeastSquare pwls= new PenalizedWeightedLeastSquare(0.5f, 2);
 		pwls.excute3D(projProcessedCL, projCL);
 		projProcessedCL.getDelegate().notifyDeviceChange();
 		    
-		String path3 = "D:\\Tasks\\FAU4\\CellImaging\\projectionsPwls2Iter.tif";
+		//String path3 = "D:\\Tasks\\FAU4\\CellImaging\\projectionsPwls1Iter.tif";
+		String path3 = "D:\\Tasks\\FAU4\\KneeImaging\\DataIterativeReco\\projectionPwls5Iter.tif";
 		projProcessed = new Grid3D(projProcessedCL);
 		imp0 = ImageUtil.wrapGrid3D(projProcessed, null);
 	    IJ.saveAs(imp0, "Tiff", path3);

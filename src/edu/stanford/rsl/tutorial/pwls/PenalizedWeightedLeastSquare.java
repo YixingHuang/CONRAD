@@ -2,6 +2,7 @@ package edu.stanford.rsl.tutorial.pwls;
 
 
 
+import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 import edu.stanford.rsl.conrad.data.numeric.opencl.OpenCLGrid2D;
 import edu.stanford.rsl.conrad.data.numeric.opencl.OpenCLGrid3D;
 import edu.stanford.rsl.tutorial.weightedtv.TVOpenCLGridOperators;
@@ -32,6 +33,6 @@ public class PenalizedWeightedLeastSquare {
 		
 	}
 	
-
+	
 
 }
