@@ -17,18 +17,18 @@ public class GenerateBlueGreenAlgaePhantom {
 		phan= phanObj.getNumericalPhantom();
 		phan.show("algae");
 		
-		ImagePlus imp;
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon\\AlgaePhantoms\\";
-		String saveName;
-		for(int i = 0; i <= 11; i++)
-		{
-			phanObj.resetVolume();
-			phan = phanObj.getNumericalPhantom();
-			imp = ImageUtil.wrapGrid3D(phan, null);
-			saveName = saveFolderPath + i + ".tif";
-			IJ.saveAs(imp, "Tiff", saveName);
-			System.out.print(" " + i);
-		}
+//		ImagePlus imp;
+//		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon\\AlgaePhantoms\\";
+//		String saveName;
+//		for(int i = 0; i <= 11; i++)
+//		{
+//			phanObj.resetVolume();
+//			phan = phanObj.getNumericalPhantom();
+//			imp = ImageUtil.wrapGrid3D(phan, null);
+//			saveName = saveFolderPath + i + ".tif";
+//			IJ.saveAs(imp, "Tiff", saveName);
+//			System.out.print(" " + i);
+//		}
 	}
 	
 }

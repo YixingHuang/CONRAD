@@ -21,32 +21,58 @@ public class ConvertFbp2Tomo {
 		new ImageJ();
 		
 		ConvertFbp2Tomo obj = new ConvertFbp2Tomo();
-		String path = "D:\\Tasks\\FAU4\\CellImaging\\Tifs\\DCRPwls.tif";
-		String path2 = "D:\\Tasks\\FAU4\\CellImaging\\Tifs\\tomoDCRPwls.tif";
+		String folder = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100DegreePwls\\";
+		String path = folder + "SEUNet1IterPwls20190917.tif";
+		String path2 = folder + "sagUNet09173D.tif";
+		String path3 = folder + "corsagUnet09173D.tif";
+		String path4 = folder + "Unet09173DPos.tif";
 		ImagePlus imp0 =IJ.openImage(path);
 		Grid3D vol = ImageUtil.wrapImagePlus(imp0);
-		Grid3D vol2 = obj.downSamplingZ(vol);
-		Grid3D tomo = obj.reorderVolume(vol2);
-		tomo.clone().show("tomo");
+		vol.clone().show("horizontal");
+		//Grid3D vol = obj.downSamplingZ(vol);
+		vol = obj.downSamplingZ(vol);
+		Grid3D sag = obj.sagittalVolume(vol);
+		sag.clone().show("sag");
 		
-		imp0 = ImageUtil.wrapGrid3D(tomo, null);
+		Grid3D coronal = obj.coronalVolume(vol);
+		coronal.clone().show("coronal");
+		vol.getGridOperator().removeNegative(vol);
+		imp0 = ImageUtil.wrapGrid3D(sag, null);
 		IJ.saveAs(imp0, "Tiff", path2);
+		imp0 = ImageUtil.wrapGrid3D(coronal, null);
+		IJ.saveAs(imp0, "Tiff", path3);
+		imp0 = ImageUtil.wrapGrid3D(vol, null);
+		IJ.saveAs(imp0, "Tiff", path4);
 	}
 		
 
 	
-	private Grid3D reorderVolume(Grid3D proj){
+	private Grid3D sagittalVolume(Grid3D volume){
 		
-		Grid3D sino = new Grid3D(proj.getSize()[1], proj.getSize()[2], proj.getSize()[0]);
-		for(int i = 0; i < proj.getSize()[0]; i++){
-			for(int j = 0; j < proj.getSize()[1]; j++) {
-				for(int k  = 0; k < proj.getSize()[1]; k++) {
-					sino.setAtIndex(k, j, i, proj.getAtIndex(i, j, k));
+		Grid3D sag = new Grid3D(volume.getSize()[1], volume.getSize()[2], volume.getSize()[0]);
+		for(int x = 0; x < volume.getSize()[0]; x++){
+			for(int y = 0; y < volume.getSize()[1]; y++) {
+				for(int z  = 0; z < volume.getSize()[2]; z++) {
+					sag.setAtIndex(y, z, x, volume.getAtIndex(x, y, z));
 				}
 			}
 		}
 		
-		return sino;	
+		return sag;	
+	}
+	
+	private Grid3D coronalVolume(Grid3D volume){
+		
+		Grid3D coroal = new Grid3D(volume.getSize()[0], volume.getSize()[2], volume.getSize()[1]);
+		for(int x = 0; x < volume.getSize()[0]; x++){
+			for(int y = 0; y < volume.getSize()[1]; y++) {
+				for(int z  = 0; z < volume.getSize()[2]; z++) {
+					coroal.setAtIndex(x, z, y, volume.getAtIndex(x, y, z));
+				}
+			}
+		}
+		
+		return coroal;	
 	}
 	
 	private Grid3D downSamplingZ(Grid3D vol)

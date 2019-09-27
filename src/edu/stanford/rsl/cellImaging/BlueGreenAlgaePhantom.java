@@ -129,7 +129,7 @@ public class BlueGreenAlgaePhantom {
 	}
 	
 	private void generateEllipsoids(){
-		ellipsoids = new double[numCyano + numNano + numPetal + 2][10];
+		ellipsoids = new double[numCyano + numNano + numPetal + 3][10];
 		double r = 0.6; //cell wall inner radius
 		double r2 = r + 0.02; //cell wall outer radius
 		double[][] cellWall =
@@ -162,6 +162,8 @@ public class BlueGreenAlgaePhantom {
 				i++;
 			}
 		}
+		
+		i = 0;
 		while(i < numCyano)
 		{
 			for(int j = 0; j < 3; j++)
@@ -177,7 +179,7 @@ public class BlueGreenAlgaePhantom {
 			temp[0][9] = 0.5 + (Math.random() - 0.5) * 0.1;
 			if(checkBoundary(temp, r, 0.01))
 			{
-				System.arraycopy(temp[0], 0, ellipsoids[i + 4], 0, 10);
+				System.arraycopy(temp[0], 0, ellipsoids[i + numPetal + 2], 0, 10);
 				i++;
 			}
 		}
@@ -186,7 +188,7 @@ public class BlueGreenAlgaePhantom {
 		
 		while(i < numNano)
 		{
-			for(int j = 0; j < 3; j++)
+			for(int j = 0; j < 2; j++)
 			{
 				temp[0][j] = (Math.random() - 0.5) * 2;
 				temp[0][j + 6] = (Math.random() - 0.5) * Math.PI; 
@@ -194,16 +196,15 @@ public class BlueGreenAlgaePhantom {
 			
 			r3 = 0.02 + (Math.random() - 0.5) * 0.01;
 			temp[0][3] = r3;
-			temp[0][4] = r3 + (Math.random() - 0.5) * 0.01;
-			temp[0][5] = r3 + (Math.random() - 0.5) * 0.01;
+			temp[0][4] = r3 + (Math.random() - 0.5) * 0.02;
+			temp[0][5] = r3 + (Math.random() - 0.5) * 0.02;
 			temp[0][9] = 1.0 + (Math.random() - 0.5) * 0.3;
 			if(checkNanoBoundary(temp, r2, 0))
 			{
-				System.arraycopy(temp[0], 0, ellipsoids[i + numCyano + 4], 0, 10);
+				System.arraycopy(temp[0], 0, ellipsoids[i + numCyano + numPetal + 2], 0, 10);
 				i++;
 			}
 		}
-
 	}
 	
 	private boolean checkBoundary(double [][] ellipsoid, double r, double tolerance)

@@ -19,13 +19,13 @@ import ij.ImagePlus;
  *
  */
 
-public class ParallelReconSymmetric120DegreeForCell {
-	private int startAngle = 30;
-
+public class ParallelReconSymmetric90DegreeForCell {
+	private int startAngle = 15;
+	//45 - 135
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
 		
-		ParallelReconSymmetric120DegreeForCell obj = new ParallelReconSymmetric120DegreeForCell();
+		ParallelReconSymmetric90DegreeForCell obj = new ParallelReconSymmetric90DegreeForCell();
 		
 		String path =  "D:\\Tasks\\FAU4\\CellImaging\\";
 		ImagePlus imp0 =IJ.openImage(path+"projectionsPwls2Iter.tif");
@@ -34,20 +34,16 @@ public class ParallelReconSymmetric120DegreeForCell {
 		
 		Grid3D sinos = obj.reorderProjections(proj0);
 		
-		
+		sinos.clone().show("sinos");
 
 
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons120DegreePwls2\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon\\FbpCellRecons90DegreePwls2\\";
 		String reconFbpPath;
 		String artifactPath;
 		int sizeX = 512;
 		int sizeY = sizeX;
-//		int s = 2; //sampling factor
-//		float sx = 1.4f;
-//		int zs = 1;
-		
-		int s = 1; //sampling factor
-		float sx = 1f;
+		int s = 2; //sampling factor
+		float sx = 1.4f;
 		int zs = 1;
 		ImagePlus impFbp, imp3D;
 		Grid2D recon, sinogram, filteredSinogram;
@@ -103,11 +99,22 @@ public class ParallelReconSymmetric120DegreeForCell {
 		}
 		recon3D.show("recon3D");
 		imp3D = ImageUtil.wrapGrid3D(recon3D, null);
-		path4 = saveFolderPath + "reconFbp3D.tif";
+		path4 = saveFolderPath + "reconFbp3D2Iter.tif";
 		IJ.saveAs(imp3D, "Tiff", path4);
 		System.out.println("\nFinished!");
+		if(s == 2)
+			recon3D = obj.downSamplingZ(recon3D);
 		Grid3D recon3D2 = obj.reorderVolume(recon3D);
 		recon3D2.show("recon3D2");
+	}
+	
+	private Grid3D downSamplingZ(Grid3D vol)
+	{
+		Grid3D vol2 = new Grid3D(vol.getSize()[0], vol.getSize()[1], vol.getSize()[2]/2);
+		for(int i = 0; i < vol2.getSize()[2]; i++)
+			vol2.setSubGrid(i, (Grid2D)vol.getSubGrid(i * 2).clone());
+		
+		return vol2;
 	}
 	
 	private Grid3D reorderProjections(Grid3D proj){
@@ -130,7 +137,7 @@ public class ParallelReconSymmetric120DegreeForCell {
 		for(int i = 0; i < proj.getSize()[0]; i++){
 			for(int j = 0; j < proj.getSize()[1]; j++) {
 				for(int k  = 0; k < proj.getSize()[2]; k++) {
-					sino.setAtIndex(k, j, i, proj.getAtIndex(i, j, k));
+					sino.setAtIndex(j, k, i, proj.getAtIndex(i, j, k));
 				}
 			}
 		}
@@ -142,7 +149,7 @@ public class ParallelReconSymmetric120DegreeForCell {
 		Grid2D sinoPadd = new Grid2D(sinogram.getSize()[0], sinogram.getSize()[1] + numAngle);
 		sinoPadd.setSpacing(sinogram.getSpacing());
 		for(int i = 0; i < sinogram.getSize()[0]; i++)
-			for(int j = 0; j < sinogram.getSize()[1]; j++)
+			for(int j = 30; j < sinogram.getSize()[1]; j++)
 				sinoPadd.setAtIndex(i, j + numAngle, sinogram.getAtIndex(i, j));
 		
 		return sinoPadd;
