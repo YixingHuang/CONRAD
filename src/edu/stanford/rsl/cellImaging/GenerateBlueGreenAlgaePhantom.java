@@ -11,7 +11,7 @@ public class GenerateBlueGreenAlgaePhantom {
 
 	public static void main(String[] args) {
 		new ImageJ();
-		BlueGreenAlgaePhantom phanObj = new BlueGreenAlgaePhantom(512, 512, 512, 100, 200);
+		BlueGreenAlgaePhantom phanObj = new BlueGreenAlgaePhantom(512, 512, 512, 100, 100, 150);
 		Grid3D phan;
 		
 		phan= phanObj.getNumericalPhantom();

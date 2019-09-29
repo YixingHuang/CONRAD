@@ -21,14 +21,15 @@ public class BlueGreenAlgaePhantom {
 	private double wx, wy, wz;
 	private double dx, dy, dz;
 	private int numCyano = 10;
-	private int numNano = 50; //number of gold nano-particles
+	private int numNano = 50; //number of gold nano-particles outside the cell
+	private int numNano2 = 50; //number of gold nano-particles on the cell wall
 	private int numPetal = 3;
 	private double[][] ellipsoids;
 
 
-	public BlueGreenAlgaePhantom( int maxI, int maxJ, int maxK, int numCyano, int numNano){
+	public BlueGreenAlgaePhantom( int maxI, int maxJ, int maxK, int numCyano, int numNano, int numNano2){
 		
-		initBlueGreenAlgae3D(maxI, maxJ, maxK, numCyano, numNano);
+		initBlueGreenAlgae3D(maxI, maxJ, maxK, numCyano, numNano, numNano2);
 		
 		if (nx == 0 || ny == 0 || nz == 0 ){
 			System.out.println("Errpr: Wrong volume image size!");			
@@ -38,13 +39,13 @@ public class BlueGreenAlgaePhantom {
 	}
 	
 	
-	public BlueGreenAlgaePhantom( Grid3D grid, int numCyano, int numNano){
+	public BlueGreenAlgaePhantom( Grid3D grid, int numCyano, int numNano, int numNano2){
 		this.image = grid;
-		initBlueGreenAlgae3D( image.getSize()[0], image.getSize()[1], image.getSize()[2], numCyano, numNano);
+		initBlueGreenAlgae3D( image.getSize()[0], image.getSize()[1], image.getSize()[2], numCyano, numNano, numNano2);
 	}
 	
 	
-	private void initBlueGreenAlgae3D( int maxI, int maxJ, int maxK, int numCyano, int numNano){
+	private void initBlueGreenAlgae3D( int maxI, int maxJ, int maxK, int numCyano, int numNano, int numNano2){
 
 		this.nx = maxI;
 		this.ny = maxJ;
@@ -57,6 +58,7 @@ public class BlueGreenAlgaePhantom {
 		dz = 2.0 / ( nz - 1 );
 		this.numCyano = numCyano;
 		this.numNano = numNano;
+		this.numNano2 = numNano2;
 		init = true;
 	}
 
@@ -74,7 +76,7 @@ public class BlueGreenAlgaePhantom {
 		double sum;
 		int iix, iiy, iiz;
 		Grid3D tag = new Grid3D(nx, ny, nz);
-		for(int idx = 0; idx < numCyano + numNano + numPetal + 2; idx ++)
+		for(int idx = 0; idx < numCyano + numNano + numNano2 + numPetal + 2; idx ++)
 		{
 			RT = transpose(dot(dot( this.Rx(ellipsoids[idx][6]), this.Ry(ellipsoids[idx][7])),this.Rz(ellipsoids[idx][8])));
 			
@@ -100,7 +102,7 @@ public class BlueGreenAlgaePhantom {
 						iiz = iz + (int) centZ;
 						if(iiz < 0 || iiz >= nz || tag.getAtIndex(iix, iiy, iiz) == 1)
 							continue;
-						p = dot(RT,new double[] {x, y, z});
+						p = dot(RT, new double[] {x, y, z});
 			            
 			            sum = Math.pow(p[0]/ellipsoids[idx][3], 2) + Math.pow(p[1]/ellipsoids[idx][4], 2) + Math.pow(p[2]/ellipsoids[idx][5], 2);
 			        
@@ -129,7 +131,7 @@ public class BlueGreenAlgaePhantom {
 	}
 	
 	private void generateEllipsoids(){
-		ellipsoids = new double[numCyano + numNano + numPetal + 3][10];
+		ellipsoids = new double[numCyano + numNano + numNano2 + numPetal + 2][10];
 		double r = 0.6; //cell wall inner radius
 		double r2 = r + 0.02; //cell wall outer radius
 		double[][] cellWall =
@@ -155,7 +157,7 @@ public class BlueGreenAlgaePhantom {
 			temp[0][3] = r3;
 			temp[0][4] = 2*r3 + (Math.random() - 0.5) * 0.005;
 			temp[0][5] = r3 + (Math.random() - 0.5) * 0.01;
-			temp[0][9] = 0.5 + (Math.random() - 0.5) * 0.1;
+			temp[0][9] = 0.5 + (Math.random() - 0.5) * 0.2;
 			if(checkBoundary(temp, r, 0.005))
 			{
 				System.arraycopy(temp[0], 0, ellipsoids[i + 2], 0, 10);
@@ -185,10 +187,12 @@ public class BlueGreenAlgaePhantom {
 		}
 		
 		i = 0;
-		
+		double xp = Math.random() - 0.5; //the plane for gold nanoparticles
 		while(i < numNano)
 		{
-			for(int j = 0; j < 2; j++)
+			temp[0][0] = xp + (Math.random() - 0.5) * 0.02;
+			temp[0][6] = (Math.random() - 0.5) * Math.PI;
+			for(int j = 1; j < 3; j++)
 			{
 				temp[0][j] = (Math.random() - 0.5) * 2;
 				temp[0][j + 6] = (Math.random() - 0.5) * Math.PI; 
@@ -203,6 +207,30 @@ public class BlueGreenAlgaePhantom {
 			{
 				System.arraycopy(temp[0], 0, ellipsoids[i + numCyano + numPetal + 2], 0, 10);
 				i++;
+			}
+
+		}
+		
+		i= 0;
+		while(i < numNano2)
+		{
+			temp[0][0] = xp + (Math.random() - 0.5) * 0.02;
+			temp[0][6] = (Math.random() - 0.5) * Math.PI;
+			for(int j = 1; j < 3; j++)
+			{
+				temp[0][j] = (Math.random() - 0.5) * 2;
+				temp[0][j + 6] = (Math.random() - 0.5) * Math.PI; 
+			}
+			
+			r3 = 0.02 + (Math.random() - 0.5) * 0.01;
+			temp[0][3] = r3;
+			temp[0][4] = r3 + (Math.random() - 0.5) * 0.02;
+			temp[0][5] = r3 + (Math.random() - 0.5) * 0.02;
+			temp[0][9] = 1.0 + (Math.random() - 0.5) * 0.3;
+			temp = reallocateNanos(temp, r2);
+			if(temp[0][9] > 0) {
+				System.arraycopy(temp[0], 0, ellipsoids[i + numCyano + numNano + numPetal + 2], 0, 10);
+ 				i++;
 			}
 		}
 	}
@@ -220,6 +248,37 @@ public class BlueGreenAlgaePhantom {
 			return false;
 		else		
 			return true;
+	}
+	
+	private double[][] reallocateNanos(double [][] ellipsoid, double r)
+	{
+
+		double dd = 0;
+		double d;
+		for(int i = 1; i < 3; i++)
+			dd += ellipsoid[0][i] * ellipsoid[0][i];
+		d = Math.sqrt(dd);
+		double maxR = Math.max(Math.max(ellipsoid[0][3], ellipsoid[0][4]), ellipsoid[0][5]);
+
+		if(d >= 0.71* r)		
+		{
+			ellipsoid[0][9] = 0;//not valid
+		}
+		else {
+			double dx = Math.sqrt(r * r - dd);
+			ellipsoid[0][0] = -dx - maxR;
+//			ellipsoid[0][0] = -dx - dx * maxR/r;
+//			if(ellipsoid[0][1] > 0)
+//				ellipsoid[0][1] = ellipsoid[0][1] + ellipsoid[0][1] * maxR/r;
+//			else
+//				ellipsoid[0][1] = ellipsoid[0][1] - ellipsoid[0][1] * maxR/r;
+//			
+//			if(ellipsoid[0][2] > 0)
+//				ellipsoid[0][2] = ellipsoid[0][2] + ellipsoid[0][2] * maxR/r;
+//			else
+//				ellipsoid[0][2] = ellipsoid[0][2] - ellipsoid[0][2] * maxR/r;
+		}
+		return ellipsoid;
 	}
 	
 	private boolean checkNanoBoundary(double [][] ellipsoid, double r, double tolerance)
