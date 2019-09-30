@@ -22,16 +22,17 @@ public class ParallelRecon120DegreeWithNoiseForPhantom {
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
 		
-		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantomSlices\\";
+		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCellsProcessed3\\";
 		String imgPath;
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantomSlicesRecons\\";
-		String referenceFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\referenceRecons\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon120\\TrainingData\\";
+		String referenceFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon120\\referenceRecons\\";
 		String reconFbpPath;
 		String artifactPath;
 		String reconPath;
 		int sizeX = 512;
 		int sizeY = sizeX;
 		int s = 2; //sampling factor
+		float sx = 1.4f;
 		ImagePlus imp, impFbp, impArtifact, impRef;
 		ParallelRecon120DegreeWithNoiseForPhantom obj = new ParallelRecon120DegreeWithNoiseForPhantom();
 		Grid2D phan, recon, reconLimited, artifact, sinogram, filteredSinogram;
@@ -39,18 +40,18 @@ public class ParallelRecon120DegreeWithNoiseForPhantom {
 		int numDet = 512;
 		double deltaS = 1;
 		ParallelProjector2D projector = new ParallelProjector2D(Math.PI, Math.PI/180.0, numDet * deltaS, deltaS);
-		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, s, s);
+		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, sx, sx);
 		RamLakKernel ramLak = new RamLakKernel(numDet, deltaS);
 		int idSave;
-		for(int imgIdx = 0; imgIdx <= 249; imgIdx++ )
+		for(int imgIdx = 1; imgIdx <= 125; imgIdx++ )
 		{
 			imgPath = folderPath + imgIdx + ".tif";
 			imp = IJ.openImage(imgPath);
 			phan = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
 			phan.getGridOperator().addBy(phan, 0.1f);
 			obj.addFOVCircle(phan);
-			//phan = obj.rotateImage90Deg(phan, imgIdx % 4 + 1);
-			idSave = 2000 + imgIdx;
+			phan = obj.rotateImage90Deg(phan, imgIdx % 4 + 2);
+			idSave = 2000 + imgIdx + 250;
 
 			if(imgIdx == 0)
 				phan.clone().show("phan");

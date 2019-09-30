@@ -29,18 +29,18 @@ public class ConvertFbp2Tomo {
 		ImagePlus imp0 =IJ.openImage(path);
 		Grid3D vol = ImageUtil.wrapImagePlus(imp0);
 		vol.clone().show("horizontal");
-		//Grid3D vol = obj.downSamplingZ(vol);
+//		Grid3D vol = obj.downSamplingZ(vol);
 		vol = obj.downSamplingZ(vol);
 		Grid3D sag = obj.sagittalVolume(vol);
 		sag.clone().show("sag");
 		
-		Grid3D coronal = obj.coronalVolume(vol);
-		coronal.clone().show("coronal");
-		vol.getGridOperator().removeNegative(vol);
-		imp0 = ImageUtil.wrapGrid3D(sag, null);
-		IJ.saveAs(imp0, "Tiff", path2);
-		imp0 = ImageUtil.wrapGrid3D(coronal, null);
-		IJ.saveAs(imp0, "Tiff", path3);
+//		Grid3D coronal = obj.coronalVolume(vol);
+//		coronal.clone().show("coronal");
+//		vol.getGridOperator().removeNegative(vol);
+//		imp0 = ImageUtil.wrapGrid3D(sag, null);
+//		IJ.saveAs(imp0, "Tiff", path2);
+//		imp0 = ImageUtil.wrapGrid3D(coronal, null);
+//		IJ.saveAs(imp0, "Tiff", path3);
 		imp0 = ImageUtil.wrapGrid3D(vol, null);
 		IJ.saveAs(imp0, "Tiff", path4);
 	}

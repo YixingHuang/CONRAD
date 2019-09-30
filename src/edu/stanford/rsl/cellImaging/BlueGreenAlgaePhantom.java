@@ -71,9 +71,9 @@ public class BlueGreenAlgaePhantom {
 		
 		double[][] RT; //transposed rotation matrices
 		
-		double signal;
+		double signal = 0;
 		double[] p;
-		double sum;
+		double sum, sum2;
 		int iix, iiy, iiz;
 		Grid3D tag = new Grid3D(nx, ny, nz);
 		for(int idx = 0; idx < numCyano + numNano + numNano2 + numPetal + 2; idx ++)
@@ -105,11 +105,21 @@ public class BlueGreenAlgaePhantom {
 						p = dot(RT, new double[] {x, y, z});
 			            
 			            sum = Math.pow(p[0]/ellipsoids[idx][3], 2) + Math.pow(p[1]/ellipsoids[idx][4], 2) + Math.pow(p[2]/ellipsoids[idx][5], 2);
-			        
-			            signal = (sum<=1.0)?ellipsoids[idx][9]:0;
+			            if(idx >= 2 && idx < 2 + numPetal)
+			            {
+			            	double[] p2 = new double[] {x - ellipsoids[1][0] + ellipsoids[idx][0], y - ellipsoids[1][1] + ellipsoids[idx][1], z - ellipsoids[1][2] + ellipsoids[idx][2]};
+			            	sum2 = Math.pow(p2[0]/ellipsoids[1][3], 2) + Math.pow(p2[1]/ellipsoids[1][4], 2) + Math.pow(p2[2]/ellipsoids[1][5], 2);
+			            	signal = (sum<=1.0 && sum2 <1.0)?ellipsoids[idx][9]:0;
+			            	if(sum<=1.0 && sum2 <=1.0)
+			            		tag.setAtIndex(iix, iiy, iiz, 1);
+			            }
+			            else
+			            {
+			            	signal = (sum<=1.0)?ellipsoids[idx][9]:0;
+			            	if(idx >= 2 && sum <= 1.0)
+				            	tag.setAtIndex(iix, iiy, iiz, 1);
+			            }
 			            image.setAtIndex(iix, iiy, iiz, image.getAtIndex(iix, iiy, iiz) + (float) signal);
-			            if(idx >= 2 && sum <= 1.0)
-			            	tag.setAtIndex(iix, iiy, iiz, 1);
 					}
 				}
 			}
@@ -136,8 +146,8 @@ public class BlueGreenAlgaePhantom {
 		double r2 = r + 0.02; //cell wall outer radius
 		double[][] cellWall =
 				// { delta_x, delta_y, delta_z,        a,       b,       c,            phi,  theta,  psi,     rho }
-				{  {    0,       0,       0,           r2,      r2,      r2,             0,      0,    0,     0.5 },
-				{       0,       0,       0,           r,       r,       r,              0,      0,    0,   -0.4 }};
+				{  {    0,       0,       0,           r2,      r2,      r2,             0,      0,    0,     1 },
+				{       0,       0,       0,           r,       r,       r,              0,      0,    0,   -0.8 }};
 		
 		System.arraycopy(cellWall[0], 0, ellipsoids[0], 0, 10);
 		System.arraycopy(cellWall[1], 0, ellipsoids[1], 0, 10);
@@ -152,13 +162,14 @@ public class BlueGreenAlgaePhantom {
 				temp[0][j] = (Math.random() - 0.5) * 1.8 * r;
 				temp[0][j + 6] = (Math.random() - 0.5) * Math.PI; 
 			}
+			temp[0][0] = -0.4 + (Math.random() - 0.5) * 0.2;
 			
-			r3 = 0.3 + (Math.random() - 0.5) * 0.05;
+			r3 = 0.3 + (Math.random() - 0.5) * 0.1;
 			temp[0][3] = r3;
 			temp[0][4] = 2*r3 + (Math.random() - 0.5) * 0.005;
 			temp[0][5] = r3 + (Math.random() - 0.5) * 0.01;
 			temp[0][9] = 0.5 + (Math.random() - 0.5) * 0.2;
-			if(checkBoundary(temp, r, 0.005))
+			if(checkCenter(temp, r))
 			{
 				System.arraycopy(temp[0], 0, ellipsoids[i + 2], 0, 10);
 				i++;
@@ -222,11 +233,11 @@ public class BlueGreenAlgaePhantom {
 				temp[0][j + 6] = (Math.random() - 0.5) * Math.PI; 
 			}
 			
-			r3 = 0.02 + (Math.random() - 0.5) * 0.01;
+			r3 = 0.004 + (Math.random() - 0.5) * 0.001;
 			temp[0][3] = r3;
-			temp[0][4] = r3 + (Math.random() - 0.5) * 0.02;
-			temp[0][5] = r3 + (Math.random() - 0.5) * 0.02;
-			temp[0][9] = 1.0 + (Math.random() - 0.5) * 0.3;
+			temp[0][4] = r3 + (Math.random() - 0.5) * 0.002;
+			temp[0][5] = r3 + (Math.random() - 0.5) * 0.002;
+			temp[0][9] = 3.0 + (Math.random() - 0.5) * 1;
 			temp = reallocateNanos(temp, r2);
 			if(temp[0][9] > 0) {
 				System.arraycopy(temp[0], 0, ellipsoids[i + numCyano + numNano + numPetal + 2], 0, 10);
@@ -250,6 +261,20 @@ public class BlueGreenAlgaePhantom {
 			return true;
 	}
 	
+	private boolean checkCenter(double [][] ellipsoid, double r)
+	{
+
+		double dd = 0;
+		double d;
+		for(int i = 0; i < 3; i++)
+			dd += ellipsoid[0][i] * ellipsoid[0][i];
+		d = Math.sqrt(dd);
+		if(d >= r)
+			return false;
+		else		
+			return true;
+	}
+	
 	private double[][] reallocateNanos(double [][] ellipsoid, double r)
 	{
 
@@ -260,7 +285,7 @@ public class BlueGreenAlgaePhantom {
 		d = Math.sqrt(dd);
 		double maxR = Math.max(Math.max(ellipsoid[0][3], ellipsoid[0][4]), ellipsoid[0][5]);
 
-		if(d >= 0.71* r)		
+		if(d >= 0.8* r || ellipsoid[0][1] > 0.1)		
 		{
 			ellipsoid[0][9] = 0;//not valid
 		}
