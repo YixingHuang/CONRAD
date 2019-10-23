@@ -21,13 +21,13 @@ import ij.ImagePlus;
 
 public class ParallelReconSymmetric120DegreeForCell {
 	private int startAngle = 30;
-
+  //30 - 148 degree
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
 		
 		ParallelReconSymmetric120DegreeForCell obj = new ParallelReconSymmetric120DegreeForCell();
 		
-		String path =  "D:\\Tasks\\FAU4\\CellImaging\\";
+		String path =  "D:\\Tasks\\FAU4\\CellImaging\\Data2\\";
 		ImagePlus imp0 =IJ.openImage(path+"projectionsPwls2Iter.tif");
 		Grid3D proj0 = ImageUtil.wrapImagePlus(imp0);
 		proj0.show("projections");
@@ -37,18 +37,18 @@ public class ParallelReconSymmetric120DegreeForCell {
 		
 
 
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons120DegreePwls2\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\Data2\\FBPPwls2_pos\\";
 		String reconFbpPath;
 		String artifactPath;
 		int sizeX = 512;
 		int sizeY = sizeX;
-//		int s = 2; //sampling factor
-//		float sx = 1.4f;
-//		int zs = 1;
-		
-		int s = 1; //sampling factor
-		float sx = 1f;
+		int s = 2; //sampling factor
+		float sx = 2f;
 		int zs = 1;
+		
+//		int s = 1; //sampling factor
+//		float sx = 1f;
+//		int zs = 1;
 		ImagePlus impFbp, imp3D;
 		Grid2D recon, sinogram, filteredSinogram;
 		int numDet = 512;
@@ -78,6 +78,7 @@ public class ParallelReconSymmetric120DegreeForCell {
 			sinoPadd = obj.zeroPaddingProjections(filteredSinogram, obj.startAngle);
 			recon = backproj.backprojectPixelDriven(sinoPadd);
 			recon.getGridOperator().multiplyBy(recon, scale);
+			recon.getGridOperator().removeNegative(recon);
 			if(imgIdx == 0)
 				recon.clone().show("recon");
 			

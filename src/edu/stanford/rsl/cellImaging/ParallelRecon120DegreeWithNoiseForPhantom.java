@@ -22,10 +22,10 @@ public class ParallelRecon120DegreeWithNoiseForPhantom {
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
 		
-		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeCellsProcessed3\\";
+		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon120\\AllSlices\\";
 		String imgPath;
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon120\\TrainingData\\";
-		String referenceFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon120\\referenceRecons\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon120\\TrainingData2\\";
+		String referenceFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon120\\referenceRecons2\\";
 		String reconFbpPath;
 		String artifactPath;
 		String reconPath;
@@ -43,15 +43,15 @@ public class ParallelRecon120DegreeWithNoiseForPhantom {
 		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, sx, sx);
 		RamLakKernel ramLak = new RamLakKernel(numDet, deltaS);
 		int idSave;
-		for(int imgIdx = 1; imgIdx <= 125; imgIdx++ )
+		for(int imgIdx = 1; imgIdx <= 2370; imgIdx++ )
 		{
 			imgPath = folderPath + imgIdx + ".tif";
 			imp = IJ.openImage(imgPath);
 			phan = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
 			phan.getGridOperator().addBy(phan, 0.1f);
 			obj.addFOVCircle(phan);
-			phan = obj.rotateImage90Deg(phan, imgIdx % 4 + 2);
-			idSave = 2000 + imgIdx + 250;
+			phan = obj.rotateImage90Deg(phan, imgIdx % 4 + 1);
+			idSave = imgIdx + 5000;
 
 			if(imgIdx == 0)
 				phan.clone().show("phan");

@@ -21,26 +21,27 @@ public class ConvertFbp2Tomo {
 		new ImageJ();
 		
 		ConvertFbp2Tomo obj = new ConvertFbp2Tomo();
-		String folder = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100DegreePwls\\";
-		String path = folder + "SEUNet1IterPwls20190917.tif";
-		String path2 = folder + "sagUNet09173D.tif";
-		String path3 = folder + "corsagUnet09173D.tif";
-		String path4 = folder + "Unet09173DPos.tif";
+		String folder = "D:\\Tasks\\FAU4\\CellImaging\\Data2\\FBPPwls2\\";
+		String path = folder + "reconFbp3D.tif";
+		String path2 = folder + "sagFBP3D.tif";
+		String path3 = folder + "corFBP3D.tif";
+		String path4 = folder + "reconFbp3DPos.tif";
 		ImagePlus imp0 =IJ.openImage(path);
 		Grid3D vol = ImageUtil.wrapImagePlus(imp0);
 		vol.clone().show("horizontal");
 //		Grid3D vol = obj.downSamplingZ(vol);
-		vol = obj.downSamplingZ(vol);
+//		vol = obj.downSamplingZ(vol);
+		vol.setSpacing(1, 1, 1);
 		Grid3D sag = obj.sagittalVolume(vol);
 		sag.clone().show("sag");
 		
-//		Grid3D coronal = obj.coronalVolume(vol);
-//		coronal.clone().show("coronal");
-//		vol.getGridOperator().removeNegative(vol);
-//		imp0 = ImageUtil.wrapGrid3D(sag, null);
-//		IJ.saveAs(imp0, "Tiff", path2);
-//		imp0 = ImageUtil.wrapGrid3D(coronal, null);
-//		IJ.saveAs(imp0, "Tiff", path3);
+		Grid3D coronal = obj.coronalVolume(vol);
+		coronal.clone().show("coronal");
+		vol.getGridOperator().removeNegative(vol);
+		imp0 = ImageUtil.wrapGrid3D(sag, null);
+		IJ.saveAs(imp0, "Tiff", path2);
+		imp0 = ImageUtil.wrapGrid3D(coronal, null);
+		IJ.saveAs(imp0, "Tiff", path3);
 		imp0 = ImageUtil.wrapGrid3D(vol, null);
 		IJ.saveAs(imp0, "Tiff", path4);
 	}

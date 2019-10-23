@@ -19,41 +19,49 @@ import ij.ImagePlus;
  *
  */
 
-public class ParallelRecon120DegreeForCell {
+public class ParallelReconSymmetric119DegreeForCell {
+	private int startAngle = 30;
 
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
 		
-		ParallelRecon120DegreeForCell obj = new ParallelRecon120DegreeForCell();
+		ParallelReconSymmetric119DegreeForCell obj = new ParallelReconSymmetric119DegreeForCell();
 		
-		String path =  "D:\\Tasks\\FAU4\\CellImaging\\data2\\";
-		ImagePlus imp0 =IJ.openImage(path+"projections2.tif");
+		String path =  "D:\\Tasks\\FAU4\\CellImaging\\";
+		ImagePlus imp0 =IJ.openImage(path+"projectionsPwls2Iter.tif");
 		Grid3D proj0 = ImageUtil.wrapImagePlus(imp0);
 		proj0.show("projections");
 		
 		Grid3D sinos = obj.reorderProjections(proj0);
-		sinos.show("sinos");
+		
 		
 
 
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\Data2\\FBP\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons120DegreePwls2\\";
 		String reconFbpPath;
 		String artifactPath;
 		int sizeX = 512;
 		int sizeY = sizeX;
+//		int s = 2; //sampling factor
+//		float sx = 1.4f;
+//		int zs = 1;
+		
 		int s = 1; //sampling factor
+		float sx = 1f;
+		int zs = 1;
 		ImagePlus impFbp, imp3D;
 		Grid2D recon, sinogram, filteredSinogram;
 		int numDet = 512;
 		double deltaS = 1;
-		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, s, s);
+		ParallelBackprojector2D backproj = new ParallelBackprojector2D(sizeX/s, sizeY/s, sx, sx);
 		RamLakKernel ramLak = new RamLakKernel(numDet, deltaS);
 		int idSave;
-		Grid3D recon3D = new Grid3D(sizeX/s, sizeY/s, sinos.getSize()[2]);
+		Grid3D recon3D = new Grid3D(sizeX/s, sizeY/s, sinos.getSize()[2]/zs);
 		String path2, path3, path4;
 		File outPutDir;
-		float scale = 20.0f*180.0f/160.0f;
-		for(int imgIdx = 0; imgIdx < sinos.getSize()[2]; imgIdx++ )
+		float scale = 40.0f*180.0f/160.0f;
+		Grid2D sinoPadd;
+		for(int imgIdx = 0; imgIdx < sinos.getSize()[2]; imgIdx = imgIdx + zs )
 		{
 			
 			idSave = imgIdx;
@@ -67,7 +75,8 @@ public class ParallelRecon120DegreeForCell {
 				ramLak.applyToGrid(filteredSinogram.getSubGrid(theta));
 			}
 			
-			recon = backproj.backprojectPixelDriven(filteredSinogram);
+			sinoPadd = obj.zeroPaddingProjections(filteredSinogram, obj.startAngle);
+			recon = backproj.backprojectPixelDriven(sinoPadd);
 			recon.getGridOperator().multiplyBy(recon, scale);
 			if(imgIdx == 0)
 				recon.clone().show("recon");
@@ -84,7 +93,7 @@ public class ParallelRecon120DegreeForCell {
 			impFbp = ImageUtil.wrapGrid(recon, null);
 			IJ.saveAs(impFbp, "Tiff", reconFbpPath);
 			IJ.saveAs(impFbp, "Tiff", artifactPath);
-			recon3D.setSubGrid(imgIdx, (Grid2D)recon.clone());
+			recon3D.setSubGrid(imgIdx/zs, (Grid2D)recon.clone());
 			System.out.print(imgIdx + " ");			
 		}
 		path3 = saveFolderPath + "evaluation\\";
@@ -97,7 +106,8 @@ public class ParallelRecon120DegreeForCell {
 		path4 = saveFolderPath + "reconFbp3D.tif";
 		IJ.saveAs(imp3D, "Tiff", path4);
 		System.out.println("\nFinished!");
-		
+		Grid3D recon3D2 = obj.reorderVolume(recon3D);
+		recon3D2.show("recon3D2");
 	}
 	
 	private Grid3D reorderProjections(Grid3D proj){
@@ -112,6 +122,30 @@ public class ParallelRecon120DegreeForCell {
 		}
 		
 		return sino;	
+	}
+	
+	private Grid3D reorderVolume(Grid3D proj){
+		
+		Grid3D sino = new Grid3D(proj.getSize()[1], proj.getSize()[2], proj.getSize()[0]);
+		for(int i = 0; i < proj.getSize()[0]; i++){
+			for(int j = 0; j < proj.getSize()[1]; j++) {
+				for(int k  = 0; k < proj.getSize()[2]; k++) {
+					sino.setAtIndex(k, j, i, proj.getAtIndex(i, j, k));
+				}
+			}
+		}
+		
+		return sino;	
+	}
+	
+	private Grid2D zeroPaddingProjections(Grid2D sinogram, int numAngle) {
+		Grid2D sinoPadd = new Grid2D(sinogram.getSize()[0], sinogram.getSize()[1] + numAngle);
+		sinoPadd.setSpacing(sinogram.getSpacing());
+		for(int i = 0; i < sinogram.getSize()[0]; i++)
+			for(int j = 0; j < sinogram.getSize()[1]; j++)
+				sinoPadd.setAtIndex(i, j + numAngle, sinogram.getAtIndex(i, j));
+		
+		return sinoPadd;
 	}
 	
 }
