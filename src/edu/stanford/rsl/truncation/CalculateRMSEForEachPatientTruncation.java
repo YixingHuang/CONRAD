@@ -125,24 +125,47 @@ public class CalculateRMSEForEachPatientTruncation {
 		temp.getGridOperator().multiplyBy(temp, temp);
 		double sum = 0;
 		int count = 0;
-		float x, y;
-		float thres = 80;
-		float thres2 = thres * thres;
+
 		for(int i = 0; i < recon.getSize()[0]; i ++)
 		{
-			x = i - (recon.getSize()[0] - 1)/2.0f;
+
 			for(int j = 0; j < recon.getSize()[1]; j++)
-			{
-				y = j - (recon.getSize()[1] - 1)/2.0f;
-				if(x * x + y * y > thres2)
+				if(j < 190)
 				{
 					count ++;
 					sum = sum + temp.getAtIndex(i, j);
 				}
-			}
 		}
 		err = sum /count;
 		err = Math.sqrt(err);
 		return err * 2040.0;
 	}
+	
+//	private double RMSE(Grid2D recon, Grid2D recon_data) {
+//		double err = 0;
+//		Grid2D temp = new Grid2D(recon);
+//		temp.getGridOperator().subtractBy(temp, recon_data);
+//		temp.getGridOperator().multiplyBy(temp, temp);
+//		double sum = 0;
+//		int count = 0;
+//		float x, y;
+//		float thres = 80;
+//		float thres2 = thres * thres;
+//		for(int i = 0; i < recon.getSize()[0]; i ++)
+//		{
+//			x = i - (recon.getSize()[0] - 1)/2.0f;
+//			for(int j = 0; j < recon.getSize()[1]; j++)
+//			{
+//				y = j - (recon.getSize()[1] - 1)/2.0f;
+//				if(x * x + y * y > thres2)
+//				{
+//					count ++;
+//					sum = sum + temp.getAtIndex(i, j);
+//				}
+//			}
+//		}
+//		err = sum /count;
+//		err = Math.sqrt(err);
+//		return err * 2040.0;
+//	}
 }
