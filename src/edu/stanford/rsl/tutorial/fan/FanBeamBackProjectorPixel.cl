@@ -83,6 +83,74 @@ kernel void backprojectPixelDriven2DCL(
 	} // end for
 	
 }
+
+kernel void backprojectPixelDriven2DCLWithSpacing(
+	image2d_t sino,
+	global float* grid,
+	int gridSizeX,
+	int gridSizeY, 
+	float maxT,
+	float deltaT,
+	float maxBeta,
+	float deltaBeta,
+	float focalLength,
+	int maxTIndex,
+	int maxBetaIndex,
+	float spacingX,
+	float spacingY
+	) {
+	// compute x, y from thread idx
+	const int x = get_global_id(0);// x index
+	const int y = get_global_id(1);// y index
+	
+	if (x >= gridSizeX || y >= gridSizeY) {
+		return;
+	}
+	float wx = x * spacingX;
+	float wy = y * spacingY;
+	float normalizationFactor = maxBetaIndex / M_PI_F;
+	int idx = mad24(y,gridSizeX,x);
+	grid[idx] = 0;
+	
+	for(int b=0; b<maxBetaIndex; ++b){
+		// compute beta [rad] and angular functions.
+		float beta = deltaBeta * b;
+		float cosBeta = cos(beta);
+		float sinBeta = sin(beta);
+
+		float2 a = {focalLength * cosBeta, focalLength * sinBeta};
+		float2 p0 = {-maxT / 2.f * sinBeta, maxT / 2.f * cosBeta};
+		
+		// compute two points on the line through t and beta
+		// We use PointND for points in 3D space and SimpleVector for directions.
+		float2 point = {wx-gridSizeX*spacingX/2.0f, wy-gridSizeY*spacingY/2.0f};
+		float2 origin = {0.0f,0.0f};
+		
+		float2 detectorPixel = intersectLines(point, a, p0, origin);
+	 	if (isnan(detectorPixel.x))
+	 		continue;
+		float2 p = detectorPixel -p0;
+		if((p.x*p0.x+p.y*p0.y)>0)//wrong direction//FIXME
+		//len=-len;
+			continue;
+		float len = length(p);		
+		float t = len/deltaT -0.5f;
+		if(t>maxT/deltaT)
+		continue;//******************************************FIXME
+		float2 bt = {t+0.5f, b+0.5f};
+		float val = read_imagef(sino, linearSampler, bt).x;
+		//DistanceWeighting //No distance weighting for iterative reconstruction
+		float radius = length(point);
+		float phi = (float) ((M_PI_F/2) + atan2(point.y, point.x));
+		float dWeight = (focalLength  +radius*sin(beta - phi))/focalLength;
+		float valtemp = val / (dWeight*dWeight*normalizationFactor);
+
+		grid[idx] += valtemp;
+		//grid[idx] += val;
+	} // end for
+	
+}
+
 kernel void backprojectPixelDriven1DCL(
 	/* not yet... float2 gridSpacing, */
 	image2d_t sino,

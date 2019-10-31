@@ -101,6 +101,84 @@ kernel void projectRayDriven2DCL(
 }
 
 
+kernel void projectRayDriven2DCLWithSpacing(
+	image2d_t grid,
+	global float* sino, 
+	/* not yet... float2 gridSpacing, */
+	float maxT,
+	float deltaT,
+	float maxBeta,
+	float deltaBeta,
+	float focalLength,
+	int maxTIndex,
+	int maxBetaIndex,
+	float spacingX,
+	float spacingY
+	) {
+	// compute e, i from thread idx
+	const unsigned int t = get_global_id(1);// t index
+	const unsigned int b = get_global_id(0);// beta index
+	if (b >= maxBetaIndex || t >= maxTIndex) {
+		return;
+	}
+
+	const float samplingRate = 3.0f; // # of samples per pixel
+	const float beta = deltaBeta * b;
+	const float cosBeta = cos(beta);
+	const float sinBeta = sin(beta);
+	
+	const int gridSizeX = get_image_width(grid);
+	const int gridSizeY = get_image_height(grid);
+
+	// compute starting point & direction of ray
+	float2 a = {focalLength * cosBeta, focalLength * sinBeta};
+	float2 p0 = {-maxT/2.0f * sinBeta, maxT/2.0f * cosBeta};
+	float2 gridXH = {gridSizeX/2.f, gridSizeY/2.f};
+	
+	float2 dirDetector = normalize(- p0);
+	
+	p0 += (t+0.5f) * deltaT * dirDetector;
+	p0 = 2.0f * p0 - a;
+	
+	//compute intersection between ray and object
+	float xmin = (- gridSizeX / 2.f) * spacingX;
+	float xmax = (gridSizeX -1 - gridSizeX / 2.f) * spacingX;
+	float ymax = (gridSizeY -1 - gridSizeY / 2.f) * spacingY;
+	float ymin = (- gridSizeY / 2.f) * spacingY;
+	
+	float4 intersectionPoints = CohenSutherlandLineClip(a.x, a.y, p0.x, p0.y, xmin, ymin, xmax, ymax);
+	float2 start = {intersectionPoints.x + gridSizeX * spacingX/2.f, intersectionPoints.y + gridSizeY*spacingY/2.f};
+	float2 end   = {intersectionPoints.z + gridSizeX * spacingX/2.f, intersectionPoints.w + gridSizeY * spacingY/2.f};
+	
+	if (isnan(intersectionPoints.x)) {
+		const int idx = t + b*maxTIndex;
+		sino[idx] = 0.f;
+		return; // no intersection
+	}
+	
+	// get the normalized increment
+	float2 increment = end - start;
+	float distance = length(increment);
+	increment /= (distance * samplingRate);
+
+	float sum = .0f;
+	// compute the integral along the line.
+	for (float tLine = 0.f; tLine < distance * samplingRate; tLine += 1.f) {
+		float2 tLine2 = {tLine,tLine};
+		float2 current = (start + increment * tLine2) / GRID_SPACING +0.5f;
+		current = current/spacingX;
+		sum += read_imagef(grid, linearSampler, current).x;
+	}
+
+	// normalize by the number of interpolation points
+	sum /= samplingRate;
+
+	// write integral value into the sinogram.
+	const int idx = t + b*maxTIndex;
+	sino[idx] = sum;
+	return;
+}
+
 kernel void projectRayDriven1DCL(
 	image2d_t grid,
 	global float* sino,

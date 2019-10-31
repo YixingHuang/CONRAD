@@ -261,7 +261,7 @@ public class TVOpenCLGridOperators extends OpenCLGridOperators{
 	 * @param gridSize
 	 * @return
 	 */
-	private CLBuffer<FloatBuffer> runKernel(String kernelName, CLDevice device, CLBuffer<FloatBuffer> gridBuffer, float value,int[]gridSize){ 
+	private CLBuffer<FloatBuffer> runKernel(String kernelName, CLDevice device, CLBuffer<FloatBuffer> gridBuffer, float value, int[]gridSize){ 
 		
 		OpenCLSetup openCLSetup = new OpenCLSetup(kernelName, device);
 
@@ -955,8 +955,29 @@ public class TVOpenCLGridOperators extends OpenCLGridOperators{
 		runKernel("FOVmask",device,clmemImg,radius,imgGrid.getSize());
 	}
 	
+	
+	public void truncateProjections(NumericGrid imgGrid, float numTrunc){
+		OpenCLGridInterface clImgGrid = (OpenCLGridInterface)imgGrid;
+		clImgGrid.getDelegate().prepareForDeviceOperation();
+		CLDevice device=clImgGrid.getDelegate().getCLDevice();
+		CLBuffer<FloatBuffer> clmemImg=clImgGrid.getDelegate().getCLBuffer();
+		runKernel("truncateProjections", device,clmemImg, numTrunc, imgGrid.getSize());
+	}
 
+	public void combineProjections(NumericGrid processed, NumericGrid proj, float numTrunc){
+		OpenCLGridInterface clProcessed = (OpenCLGridInterface)processed;
+		OpenCLGridInterface clProj = (OpenCLGridInterface)proj;
+		
+		clProcessed.getDelegate().prepareForDeviceOperation();
+		clProj.getDelegate().prepareForDeviceOperation();
+		CLDevice device = clProcessed.getDelegate().getCLDevice();
 
+		CLBuffer<FloatBuffer> clmemProcessed = clProcessed.getDelegate().getCLBuffer();
+		CLBuffer<FloatBuffer> clmemProj = clProj.getDelegate().getCLBuffer();
+		runKernel("combineProjections",device,clmemProcessed, clmemProj, numTrunc, proj.getSize());
+		clProcessed.getDelegate().notifyDeviceChange();
+	}
+	
 	public void penalizedWeightedLeastSquare(NumericGrid processed, NumericGrid proj, float sigma){
 		OpenCLGridInterface clProcessed = (OpenCLGridInterface)processed;
 		OpenCLGridInterface clProj = (OpenCLGridInterface)proj;

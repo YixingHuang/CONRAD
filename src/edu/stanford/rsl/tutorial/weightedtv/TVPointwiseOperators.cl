@@ -1522,3 +1522,45 @@ kernel void penalizedWeightedLeastSquare(global float* gridProcessed, global flo
 //			gridProcessed[idx] = 0;
 	}
 }
+
+
+kernel void truncateProjections(global float* gridProj, const float numTrunc, const int sizeX, const int sizeY, const int sizeZ)
+{
+
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+	
+	
+	if((x >= sizeX) ||(y >= sizeY))
+	{
+		return;
+	}
+	int idx;
+	for(int z = 0; z < sizeZ; z++)
+	{
+		idx = z * sizeX * sizeY + y * sizeX + x;
+		if(x < numTrunc || x > sizeX - numTrunc -1)
+			gridProj[idx] = 0;
+	}
+}
+
+kernel void combineProjections(global float* gridProcessed, global float* gridProj, const float numTrunc, const int sizeX, const int sizeY, const int sizeZ)
+{
+
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+	
+	
+	if((x >= sizeX) ||(y >= sizeY))
+	{
+		return;
+	}
+	int idx;
+	for(int z = 0; z < sizeZ; z++)
+	{
+		idx = z * sizeX * sizeY + y * sizeX + x;
+		if(x < numTrunc || x > sizeX - numTrunc -1)
+			gridProcessed[idx] = gridProj[idx];
+	}
+}
+

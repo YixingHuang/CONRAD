@@ -411,7 +411,7 @@ public class FanBeamBackprojector2D {
 	
 	public Grid2D backprojectPixelDrivenCL(Grid2D sino) {
 		this.initSinogramParams(sino);
-		boolean debug = true;
+		boolean debug = false;
 		// create context
 		CLContext context = OpenCLUtil.createContext();
 		if (debug)
@@ -589,6 +589,97 @@ public class FanBeamBackprojector2D {
 		for (int i = 0; i < imgSizeX*imgSizeY; ++i) {
 				((Grid2D)img).getBuffer()[i] = imgBuffer.getBuffer().get();
 		}
+		queue.release();
+		imgBuffer.release();
+		sinoGrid.release();
+		kernel.release();
+		program.release();
+		context.release();
+
+		return img;
+	}
+	
+	public Grid2D backprojectPixelDrivenCLWithSpacing(Grid2D sino, float spacingX, float spacingY) {
+		this.initSinogramParams(sino);
+		boolean debug = false;
+		// create context
+		CLContext context = OpenCLUtil.createContext();
+		if (debug)
+			System.out.println("Context: " + context);
+		//show OpenCL devices in System
+		CLDevice[] devices = context.getDevices();
+		if (debug){
+			for (CLDevice dev: devices)
+				System.out.println(dev);
+		}
+
+		// select device
+		CLDevice device = context.getMaxFlopsDevice();
+		if (debug)
+			System.out.println("Device: " + device);
+
+		int sinoSize = maxBetaIndex*maxTIndex;
+		// Length of arrays to process
+		int localWorkSize = Math.min(device.getMaxWorkGroupSize(), 16); // Local work size dimensions
+		int globalWorkSizeX = OpenCLUtil.roundUp(localWorkSize, imgSizeX); // rounded up to the nearest multiple of localWorkSize
+		int globalWorkSizeY = OpenCLUtil.roundUp(localWorkSize, imgSizeY); // rounded up to the nearest multiple of localWorkSize
+
+		// load sources, create and build program
+		CLProgram program = null;
+		try {
+			program = context.createProgram(this.getClass().getResourceAsStream("FanBeamBackProjectorPixel.cl"))
+					.build();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(-1);
+		}
+
+		// create image from input grid
+		CLImageFormat format = new CLImageFormat(ChannelOrder.INTENSITY, ChannelType.FLOAT);
+
+		CLBuffer<FloatBuffer> sinoBuffer = context.createFloatBuffer(sinoSize, Mem.READ_ONLY);
+		for (int i=0;i<sinoSize;++i){
+				sinoBuffer.getBuffer().put(((Grid2D)sino).getBuffer()[i]);
+		}
+		sinoBuffer.getBuffer().rewind();
+		
+		/// CP
+		CLImage2d<FloatBuffer> sinoGrid = context.createImage2d(
+				sinoBuffer.getBuffer(), sino.getSize()[0], sino.getSize()[1],
+				format,Mem.READ_ONLY);
+		sinoBuffer.release();
+
+		// create memory for output image
+		CLBuffer<FloatBuffer> imgBuffer = context.createFloatBuffer(imgSizeX*imgSizeY, Mem.WRITE_ONLY);
+
+		// copy params
+		CLKernel kernel = program.createCLKernel("backprojectPixelDriven2DCLWithSpacing");
+		kernel.putArg(sinoGrid).putArg(imgBuffer)
+		.putArg(imgSizeX).putArg(imgSizeY)
+		.putArg((float)maxT).putArg((float)deltaT)
+		.putArg((float)maxBeta).putArg((float)deltaBeta)
+		.putArg((float)focalLength).putArg(maxTIndex).putArg(maxBetaIndex).putArg(spacingX).putArg(spacingY); // TODO: Spacing :)
+
+		// createCommandQueue
+		CLCommandQueue queue = device.createCommandQueue();
+		queue
+		.putWriteImage(sinoGrid, true)
+		.finish()
+		.put2DRangeKernel(kernel, 0, 0, globalWorkSizeX, globalWorkSizeY,
+				localWorkSize, localWorkSize)
+		.finish()
+		.putReadBuffer(imgBuffer, true)
+		.finish();
+
+		// write grid back to grid2D
+		Grid2D img = new Grid2D(this.imgSizeX, this.imgSizeY);
+		//img.setSpacing(pxSzXMM, pxSzYMM);
+		imgBuffer.getBuffer().rewind();
+		for (int i = 0; i < imgSizeX*imgSizeY; ++i) {
+				((Grid2D)img).getBuffer()[i] = imgBuffer.getBuffer().get();
+		}
+
 		queue.release();
 		imgBuffer.release();
 		sinoGrid.release();
