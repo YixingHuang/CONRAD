@@ -1,10 +1,13 @@
-package edu.stanford.rsl.tutorial.parallel;
+package edu.stanford.rsl.tutorial.differentiatebackprojection;
 
 import edu.stanford.rsl.conrad.data.numeric.Grid1D;
 import edu.stanford.rsl.conrad.data.numeric.Grid2D;
 import edu.stanford.rsl.tutorial.filters.RamLakKernel;
+import edu.stanford.rsl.tutorial.parallel.ParallelBackprojector2D;
+import edu.stanford.rsl.tutorial.parallel.ParallelProjector2D;
 import edu.stanford.rsl.tutorial.phantoms.DotsGrid2D;
 import edu.stanford.rsl.tutorial.phantoms.Phantom;
+import edu.stanford.rsl.tutorial.phantoms.SheppLogan;
 import ij.ImageJ;
 
 /**
@@ -18,16 +21,22 @@ public class ParallelReconExample2 {
 	public static void main (String [] args){
 		new ImageJ();
 		ParallelReconExample2 obj = new ParallelReconExample2();
+		
 		int x = 512;
 		int y = 512;
+		double xSpacing = 1.0;
+		double ySpacing = 1.0;
+		
+		dbpOperators dbpOp = new dbpOperators(x, y, xSpacing, ySpacing);
 		// Create a phantom
-		Phantom phan = new DotsGrid2D(x, y);
+		Phantom phan = new SheppLogan(x, false);
 		//phan = new UniformCircleGrid2D(x, y);
 		//phan = new MickeyMouseGrid2D(x, y);
+		phan.setSpacing(xSpacing, ySpacing);
 		phan.show("The Phantom");
 		
 		// Project forward parallel
-		ParallelProjector2D projector = new ParallelProjector2D(2* Math.PI, Math.PI/180.0, 400, 1);
+		ParallelProjector2D projector = new ParallelProjector2D(2* Math.PI, Math.PI/180.0, 768, 1);
 		Grid2D sinogram = projector.projectRayDrivenCL(phan);
 		sinogram.show("The Sinogram");
 		Grid2D filteredSinogram = new Grid2D(sinogram);
@@ -70,10 +79,19 @@ public class ParallelReconExample2 {
 		
 		// Backproject and show
 		ParallelBackprojector2D backproj = new ParallelBackprojector2D(x, y, 1, 1);
-		backproj.backprojectPixelDriven(filteredSinogram).show("FBP");
-		backproj.backprojectPixelDriven(sino1).show("DBP");
-		backproj.backprojectPixelDriven(sino2).show("DBP2");
+		Grid2D reconFBP = backproj.backprojectPixelDriven(filteredSinogram);
+		reconFBP.clone().show("FBP");
+		Grid2D reconDBP = backproj.backprojectPixelDriven(sino1);
+		reconDBP.clone().show("DBP");
+		Grid2D reconDBP2 = backproj.backprojectPixelDriven(sino2);
+		reconDBP2.clone().show("DBP2");
 		
+		for(int row = 0; row < reconDBP2.getHeight(); row++)
+		{
+//			if(row == 256)
+			reconDBP2.setSubGrid(row, dbpOp.WeightedHilbertTransform(reconDBP2.getSubGrid(row)));
+		}
+		reconDBP2.clone().show("DBP2 IHT");
 	}
 	
 	Grid1D differentiatedProjection1D(Grid1D proj) {
