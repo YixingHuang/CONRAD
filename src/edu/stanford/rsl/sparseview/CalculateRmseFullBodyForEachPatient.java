@@ -1,0 +1,205 @@
+package edu.stanford.rsl.sparseview;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.gui.OvalRoi;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import edu.stanford.rsl.conrad.data.numeric.Grid2D;
+import edu.stanford.rsl.conrad.data.numeric.Grid3D;
+import edu.stanford.rsl.conrad.data.numeric.NumericPointwiseOperators;
+import edu.stanford.rsl.conrad.utils.ImageUtil;
+
+public class CalculateRmseFullBodyForEachPatient {
+	public static void main(String[] args) throws IOException{
+		new ImageJ();
+		
+		String path = "C:\\Tasks\\FAU4\\SparseView\\90degree\\recon\\";
+		String uNetPath = "C:\\Tasks\\FAU4\\SparseView\\90degree\\UNetRecons\\";
+		String wTvPath = "C:\\Tasks\\FAU4\\SparseView\\90degree\\wTV\\";
+		String DcrPath = "C:\\Tasks\\FAU4\\SparseView\\90degree\\DCR\\";
+
+		ImagePlus imp1;
+		String nameGT, nameFBP, nameUNet, nameWTV, nameDCR;
+		Grid3D gt, fbp, wtv, unet, dcr;
+		Grid2D gt2d, fbp2d, wtv2d, unet2d, dcr2d;
+		double rmseFbp, rmseWtv, rmseUnet, rmseDcr;
+		File outPutDir0, outPutDir1;
+		BufferedWriter bw0, bw1; 
+		double sumFbp, sumWtv, sumUnet, sumDcr;
+		int delta = 20;
+		for(int idx = 3; idx <= 3; idx ++){
+			if(idx == 4 )
+				continue;
+			sumFbp = 0;
+//			sumWce = 0;
+			sumWtv = 0;
+			sumUnet = 0;
+			sumDcr = 0;
+			
+			nameGT = path + "reconGT" + idx + ".tif";
+//			nameWCE = path + "reconTruncated" + idx + ".tif";
+			nameFBP = path + "reconTruncated" + idx + ".tif";
+			nameWTV = wTvPath + idx + "\\30_FinalReconCL.tif";
+			nameUNet = uNetPath + "UNetP" + idx + ".tif";
+			nameDCR = DcrPath + idx + "\\10_FinalReconCL.tif";
+			
+			imp1=IJ.openImage(nameGT);
+			gt = ImageUtil.wrapImagePlus(imp1);
+		
+//			imp1=IJ.openImage(nameWCE);
+//			wce = ImageUtil.wrapImagePlus(imp1);
+			
+			imp1=IJ.openImage(nameFBP);
+			fbp = ImageUtil.wrapImagePlus(imp1);
+			
+			imp1=IJ.openImage(nameWTV);
+			wtv = ImageUtil.wrapImagePlus(imp1);
+			
+			
+			imp1=IJ.openImage(nameUNet);
+			unet = ImageUtil.wrapImagePlus(imp1);
+			
+			imp1=IJ.openImage(nameDCR);
+			dcr = ImageUtil.wrapImagePlus(imp1);
+			
+			
+//			outPutDir0 = new File(path3+"RMSE_FBP_ROI.txt");
+//			outPutDir1 = new File(path3+"UNet_ROI.txt");
+//			if(!outPutDir0.exists()){
+//				outPutDir0.getParentFile().mkdirs();
+//				outPutDir0.createNewFile();
+//			}
+//			
+//			if(!outPutDir1.exists()){
+//				outPutDir1.getParentFile().mkdirs();
+//				outPutDir1.createNewFile();
+//			}
+//
+//			
+//			bw0 = new BufferedWriter(new FileWriter(outPutDir0));
+//			bw1 = new BufferedWriter(new FileWriter(outPutDir1));
+			for(int i = delta; i < gt.getSize()[2] - delta; i++) {
+				gt2d = (Grid2D) gt.getSubGrid(i).clone();
+				fbp2d = (Grid2D) fbp.getSubGrid(i).clone();
+//				wce2d = (Grid2D) wce.getSubGrid(i).clone();
+				wtv2d = (Grid2D) wtv.getSubGrid(i).clone();
+				unet2d = (Grid2D) unet.getSubGrid(i).clone();
+				dcr2d = (Grid2D) dcr.getSubGrid(i).clone();
+				
+				rmseFbp = RMSE_FullBody(fbp2d, gt2d);
+//				rmseWce = RMSE_FullBody(wce2d, gt2d);
+				rmseWtv = RMSE_FullBody(wtv2d, gt2d);
+				rmseUnet = RMSE_FullBody(unet2d, gt2d);
+				rmseDcr = RMSE_FullBody(dcr2d, gt2d);
+				
+				sumFbp += rmseFbp;
+//				sumWce += rmseWce;
+				sumWtv += rmseWtv;
+				sumUnet += rmseUnet;
+				sumDcr += rmseDcr;
+//				bw0.write(rmse0 + "\r\n");
+//				bw0.flush();	
+//		
+//				bw1.write(rmse1 + "\r\n");
+//				bw1.flush();
+				if(idx == 3 && i == 161)
+					System.out.println(idx + " " + i + ":" + rmseFbp + " " + rmseWtv + " " + rmseUnet + " " + rmseDcr);
+				
+				if(idx == 3 && i == 195)
+					System.out.println(idx + " " + i + ":" + rmseFbp + " " + rmseWtv + " " + rmseUnet + " " + rmseDcr);
+				
+			}
+//			bw1.close();
+//			bw0.close();
+
+			
+			sumFbp = sumFbp/(gt.getSize()[2] - delta*2);
+//			sumWce = sumWce/(gt.getSize()[2] - 40);
+			sumWtv = sumWtv/(gt.getSize()[2] - delta*2);
+			sumUnet = sumUnet/(gt.getSize()[2] - delta*2);
+			sumDcr = sumDcr/(gt.getSize()[2] - delta*2);
+			System.out.println(idx + ": " + sumFbp + " " + sumWtv + " " + sumUnet + " " + sumDcr);
+		}
+		
+		
+	}
+	
+//	private static double RMSE(Grid2D recon, Grid2D recon_data) {
+//		double err = 0;
+//		Grid2D temp = new Grid2D(recon);
+//		temp.getGridOperator().subtractBy(temp, recon_data);
+//		temp.getGridOperator().multiplyBy(temp, temp);
+//		err = temp.getGridOperator().sum(temp);
+//		err = err / (temp.getSize()[0] * temp.getSize()[1]);
+//		err = Math.sqrt(err);
+//		return err;
+//	}
+//	
+	/**
+	 * ROI RMSE
+	 * @param recon
+	 * @param recon_data
+	 * @return
+	 */
+//	private static double RMSE_FullBody(Grid2D recon, Grid2D recon_data) {
+//		double err = 0;
+//		Grid2D temp = new Grid2D(recon);
+//		temp.getGridOperator().subtractBy(temp, recon_data);
+//		temp.getGridOperator().multiplyBy(temp, temp);
+//		double sum = 0;
+//		int count = 0;
+//		float x, y;
+//		float thres = 97;
+//		float thres2 = thres * thres;
+//		for(int i = 0; i < recon.getSize()[0]; i ++)
+//		{
+//			x = i - (recon.getSize()[0] - 1)/2.0f;
+//			for(int j = 0; j < recon.getSize()[1]; j++)
+//			{
+//				y = j - (recon.getSize()[1] - 1)/2.0f;
+//				if(x * x + y * y < thres2)
+//				{
+//					count ++;
+//					sum = sum + temp.getAtIndex(i, j);
+//				}
+//			}
+//		}
+//		err = sum /count;
+//		err = Math.sqrt(err);
+//		return err * 2040.0;
+//	}
+//	
+	/**
+	 * Full Body RMSE
+	 * @param recon
+	 * @param recon_data
+	 * @return
+	 */
+	private static double RMSE_FullBody(Grid2D recon, Grid2D recon_data) {
+		double err = 0;
+		Grid2D temp = new Grid2D(recon);
+		temp.getGridOperator().subtractBy(temp, recon_data);
+		temp.getGridOperator().multiplyBy(temp, temp);
+		double sum = 0;
+		int count = 0;
+
+		for(int i = 0; i < recon.getSize()[0]; i ++)
+		{
+
+			for(int j = 0; j < recon.getSize()[1]; j++)
+				{
+					count ++;
+					sum = sum + temp.getAtIndex(i, j);
+				}
+		}
+		err = sum /count;
+		err = Math.sqrt(err);
+		return err * 2040.0;
+	}
+}

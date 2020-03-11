@@ -15,7 +15,7 @@ import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 import edu.stanford.rsl.conrad.data.numeric.NumericPointwiseOperators;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
 
-public class CalculateRMSEForEachPatientTruncation {
+public class CalculateRMSEFor18thPatientTruncation {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
@@ -26,7 +26,7 @@ public class CalculateRMSEForEachPatientTruncation {
 		double rmse2, rmse3, rmse4, rmse5, rmse6;
 		double sum2 = 0, sum3 = 0, sum4 = 0, sum5 = 0, sum6 = 0;
 		Grid2D ref, recon;
-		CalculateRMSEForEachPatientTruncation obj = new CalculateRMSEForEachPatientTruncation();
+		CalculateRMSEFor18thPatientTruncation obj = new CalculateRMSEFor18thPatientTruncation();
 		
 		for(int idx = 18; idx <= 18; idx ++){
 			name1 = path + "GT.tif";
@@ -63,16 +63,19 @@ public class CalculateRMSEForEachPatientTruncation {
 				rmse5 = obj.RMSE(ref, recon);
 				recon = vol6.getSubGrid(i);
 				rmse6 = obj.RMSE(ref, recon);
-				if(i == 29 || i == 139) {
+				if(i == 29 || i == 139 || i == 149) {
 					System.out.println("i = " + i + ": "+ rmse2 + ", " + rmse3 + ", " + rmse4 + ", " + rmse5 + ", " + rmse6);
 				}
+				if(i >= 20 && i < vol1.getSize()[2] - 20)
+				{
 				sum2 += rmse2; sum3 += rmse3; sum4 += rmse4; sum5 += rmse5; sum6 += rmse6;
+				}
 			}
-			sum2 = sum2/vol1.getSize()[2];
-			sum3 = sum3/vol1.getSize()[2];
-			sum4 = sum4/vol1.getSize()[2];
-			sum5 = sum5/vol1.getSize()[2];
-			sum6 = sum6/vol1.getSize()[2];
+			sum2 = sum2/(vol1.getSize()[2] - 40);
+			sum3 = sum3/(vol1.getSize()[2] - 40);
+			sum4 = sum4/(vol1.getSize()[2] - 40);
+			sum5 = sum5/(vol1.getSize()[2] - 40);
+			sum6 = sum6/(vol1.getSize()[2] - 40);
 			System.out.println("average rmse = " + sum2 + ", " + sum3 + ", " + sum4 + ", " + sum5 + ", " + sum6);
 		}
 		
@@ -90,6 +93,12 @@ public class CalculateRMSEForEachPatientTruncation {
 //		return err * 2040.0;
 //	}
 	
+	/**
+	 * ROI RMSE
+	 * @param recon
+	 * @param recon_data
+	 * @return
+	 */
 //	private double RMSE(Grid2D recon, Grid2D recon_data) {
 //		double err = 0;
 //		Grid2D temp = new Grid2D(recon);
@@ -118,6 +127,12 @@ public class CalculateRMSEForEachPatientTruncation {
 //		return err * 2040.0;
 //	}
 	
+//	/**
+//	 * Full Body RMSE
+//	 * @param recon
+//	 * @param recon_data
+//	 * @return
+//	 */
 	private double RMSE(Grid2D recon, Grid2D recon_data) {
 		double err = 0;
 		Grid2D temp = new Grid2D(recon);
@@ -140,7 +155,7 @@ public class CalculateRMSEForEachPatientTruncation {
 		err = Math.sqrt(err);
 		return err * 2040.0;
 	}
-	
+//	
 //	private double RMSE(Grid2D recon, Grid2D recon_data) {
 //		double err = 0;
 //		Grid2D temp = new Grid2D(recon);

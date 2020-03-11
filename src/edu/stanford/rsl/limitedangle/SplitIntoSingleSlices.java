@@ -1,4 +1,4 @@
-package edu.stanford.rsl.truncation;
+package edu.stanford.rsl.limitedangle;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -19,8 +19,8 @@ public class SplitIntoSingleSlices {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
-		String path = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\recon\\";
-		String path2 = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\testData_d1\\";
+		String path = "C:\\Tasks\\FAU4\\LimitedAngle\\Noisy3D\\150Degree\\recon\\";
+		String path2 = "C:\\Tasks\\FAU4\\LimitedAngle\\Noisy3D\\150Degree\\testData_d1\\";
 		String path3;
 		ImagePlus imp1, imp2;
 		String name1, name2, saveName1, saveName2;
@@ -29,7 +29,9 @@ public class SplitIntoSingleSlices {
 		int saveIndex, getIndex;
 		String path4, path5;
 		File outPutDir;
-		for(int idx = 1; idx<=4; idx ++){
+		for(int idx = 1; idx<=18; idx ++){
+			if(idx == 4)
+				continue;
 			name1 = path + "reconTruncated" + idx + ".tif";
 			//name2 = path + "reconGT" + idx + ".tif";
 			name2 = path + "artifacts" + idx + ".tif";
@@ -69,7 +71,5 @@ public class SplitIntoSingleSlices {
 		    outPutDir.mkdirs();
 		}
 		}
-		
-		
 	}
 }

@@ -28,7 +28,7 @@ public class ParallelReconFromCombinedProjectionsForCell {
 		float scale = 1;
 		ParallelReconFromCombinedProjectionsForCell obj = new ParallelReconFromCombinedProjectionsForCell();
 		
-		String path = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeTestPhantomNoise10e4\\TestSlicesPWLS2\\CombineProjections\\";
+		String path = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100DegreePwls\\CombineProjections\\";
 		ImagePlus imp0 =IJ.openImage(path+"sino3DReo.tif");
 		Grid3D proj0 = ImageUtil.wrapImagePlus(imp0);
 		proj0.show("projections");
@@ -38,7 +38,7 @@ public class ParallelReconFromCombinedProjectionsForCell {
 		
 
 
-		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeTestPhantomNoise10e4\\TestSlicesPWLS2\\";
+		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100DegreePwls\\";
 		String reconFbpPath;
 		String artifactPath;
 		int sizeX = 512;
@@ -76,30 +76,14 @@ public class ParallelReconFromCombinedProjectionsForCell {
 			recon.getGridOperator().multiplyBy(recon, scale);
 			if(imgIdx == 0)
 				recon.clone().show("recon");
-			
-			
-//			path2 = saveFolderPath + idSave + "\\";
-//			outPutDir = new File(path2);
-//			if(!outPutDir.exists()){
-//		    outPutDir.mkdirs();
-//			}
-		    
-//			reconFbpPath = path2 + "data" + idSave + ".tif";
-//			artifactPath = path2 + "data" + idSave + "_mask.tif";
-//			impFbp = ImageUtil.wrapGrid(recon, null);
-//			IJ.saveAs(impFbp, "Tiff", reconFbpPath);
-//			IJ.saveAs(impFbp, "Tiff", artifactPath);
+
 			recon3D.setSubGrid(imgIdx/zs, (Grid2D)recon.clone());
 			System.out.print(imgIdx + " ");			
 		}
-//		path3 = saveFolderPath + "evaluation\\";
-//		outPutDir = new File(path3);
-//		if(!outPutDir.exists()){
-//	    outPutDir.mkdirs();
-//		}
+
 		recon3D.show("recon3D");
 		imp3D = ImageUtil.wrapGrid3D(recon3D, null);
-		path4 = saveFolderPath + "reconFbp3DCombined.tif";
+		path4 = saveFolderPath + "reconFbp3DCombinedU1P5Pwls.tif";
 		IJ.saveAs(imp3D, "Tiff", path4);
 		System.out.println("\nFinished!");
 		Grid3D recon3D2 = obj.reorderVolume(recon3D);

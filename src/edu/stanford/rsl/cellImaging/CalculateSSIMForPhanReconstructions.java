@@ -14,11 +14,12 @@ import edu.stanford.rsl.conrad.data.numeric.Grid2D;
 import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 import edu.stanford.rsl.conrad.data.numeric.NumericPointwiseOperators;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
+import edu.stanford.rsl.conrad.utils.DoubleArrayUtil;
 
-public class CalculateRMSEForTwoVolumes {
+public class CalculateSSIMForPhanReconstructions {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		CalculateRMSEForTwoVolumes obj = new CalculateRMSEForTwoVolumes();
+		CalculateSSIMForPhanReconstructions obj = new CalculateSSIMForPhanReconstructions();
 //		String folderPath = "D:\\Tasks\\FAU4\\CellImaging\\Tifs\\phantome5Results\\";
 //		String path0 = folderPath + "referenceRecons.tif";
 //		String path1 = folderPath + "phanFbp.tif";
@@ -67,7 +68,7 @@ public class CalculateRMSEForTwoVolumes {
 			obj.keepFOV(ref2D);
 			recon2D = recon3D1.getSubGrid(i);
 			obj.keepFOV(recon2D);
-			r1 = RMSE(ref2D, recon2D);
+			r1 = obj.getSSIMDoubleValue(ref2D, recon2D);
 			ar1 += r1;
 			if(i == n1)
 				r1s2 = r1;
@@ -76,7 +77,7 @@ public class CalculateRMSEForTwoVolumes {
 			
 			recon2D = recon3D2.getSubGrid(i);
 			obj.keepFOV(recon2D);
-			r2 = RMSE(ref2D, recon2D);
+			r2 = obj.getSSIMDoubleValue(ref2D, recon2D);
 			ar2 += r2;
 			if(i == n1)
 				r2s2 = r2;
@@ -85,7 +86,7 @@ public class CalculateRMSEForTwoVolumes {
 			
 			recon2D = recon3D3.getSubGrid(i);
 			obj.keepFOV(recon2D);
-			r3 = RMSE(ref2D, recon2D);
+			r3 = obj.getSSIMDoubleValue(ref2D, recon2D);
 			ar3 += r3;
 			if(i == n1)
 				r3s2 = r3;
@@ -94,7 +95,7 @@ public class CalculateRMSEForTwoVolumes {
 			
 			recon2D = recon3D4.getSubGrid(i);
 			obj.keepFOV(recon2D);
-			r4 = RMSE(ref2D, recon2D);
+			r4 = obj.getSSIMDoubleValue(ref2D, recon2D);
 			ar4 += r4;
 			if(i == n1)
 				r4s2 = r4;
@@ -103,7 +104,7 @@ public class CalculateRMSEForTwoVolumes {
 			
 			recon2D = recon3D5.getSubGrid(i);
 			obj.keepFOV(recon2D);
-			r5 = RMSE(ref2D, recon2D);
+			r5 = obj.getSSIMDoubleValue(ref2D, recon2D);
 			ar5 += r5;
 			if(i == n1)
 				r5s2 = r5;
@@ -112,7 +113,7 @@ public class CalculateRMSEForTwoVolumes {
 			
 			recon2D = recon3D6.getSubGrid(i);
 			obj.keepFOV(recon2D);
-			r6 = RMSE(ref2D, recon2D);
+			r6 = obj.getSSIMDoubleValue(ref2D, recon2D);
 			ar6 += r6;
 			if(i == n1)
 				r6s2 = r6;
@@ -128,33 +129,94 @@ public class CalculateRMSEForTwoVolumes {
 		
 		System.out.print("average error: " + ar1/512.0 + ", " + ar2/512.0 + ", " + ar3/512.0 + ", " + ar4/512.0 + ", " + ar5/512.0 + ", " + ar6/512.0 + "");
 		System.out.println(" ");
+		
+		
 	}
 	
-	private static double RMSE(Grid2D recon, Grid2D recon_data) {
-		double err = 0;
-		Grid2D temp = new Grid2D(recon);
-		temp.getGridOperator().subtractBy(temp, recon_data);
-		temp.getGridOperator().multiplyBy(temp, temp);
-		err = temp.getGridOperator().sum(temp);
-		err = err / (temp.getSize()[0] * temp.getSize()[1]);
-		err = Math.sqrt(err) /50.0;
-		return err;
-	}
 	
-	private void addFOVCircle(Grid2D phan)
-	{
-		float r = (phan.getSize()[0] - 1.0f)/2.0f;
-		float rr = r * r;
-		float xCent = r;
-		float yCent = xCent;
-		float dd;
-		for(int i = 0; i < phan.getSize()[0]; i ++)
-			for(int j = 0; j < phan.getSize()[1]; j ++)
-			{
-				dd = (i - xCent) * (i - xCent) + (j - yCent) * (j - yCent);
-				if(dd <= rr && dd > rr - 250)
-					phan.setAtIndex(i, j, 1.0f);
+	/**
+	 * Return a double SSIM result of two ImagePlus.
+	 *
+	 * @param Imp1
+	 * @param Imp2
+	 * @return returnSSIMDoubleValue
+	 */
+	public double getSSIMDoubleValue(ImagePlus Imp1, ImagePlus Imp2) {
+		double returnSSIMDoubleValue = 0;
+		int lengthOfImp1 = Imp1.getWidth() * Imp1.getHeight();
+		int lengthOfImp2 = Imp2.getWidth() * Imp2.getHeight();
+		if (lengthOfImp1 != lengthOfImp2) {
+			System.out.println("[!] Error: ROI sizes are not equal!");
+		} else {
+			double[] xCoord = new double[lengthOfImp1];
+			double[] yCoord = new double[lengthOfImp2];
+			int XnonFinitiyCounts = 0;
+			int YnonFinitiyCounts = 0;
+			for (int i = 0; i < lengthOfImp1; i++) {
+
+				if (Float.isFinite(Imp1.getProcessor().getf(i))) {
+					xCoord[i] = Imp1.getProcessor().getf(i);
+				} else {// kick out non-Finite values of Imp1
+					XnonFinitiyCounts = XnonFinitiyCounts + 1;
+					xCoord[i] = 0;
+				}
+
+				if (Float.isFinite(Imp2.getProcessor().getf(i))) {
+					yCoord[i] = Imp2.getProcessor().getf(i);
+				} else {// kick out non-Finite values of Imp2
+					YnonFinitiyCounts = YnonFinitiyCounts + 1;
+					yCoord[i] = 0;
+				}
+
 			}
+
+			// Calculate the Correlation result.
+			double SSIMDoubleValue = DoubleArrayUtil.computeSSIMDoubleArrays(xCoord, yCoord);
+			returnSSIMDoubleValue = SSIMDoubleValue;
+
+		}
+		return returnSSIMDoubleValue;
+
+	}
+	
+	public double getSSIMDoubleValue(Grid2D img1, Grid2D img2) {
+		ImagePlus Imp1 = ImageUtil.wrapGrid(img1, null);
+		ImagePlus Imp2 = ImageUtil.wrapGrid(img2, null);
+		double returnSSIMDoubleValue = 0;
+		int lengthOfImp1 = Imp1.getWidth() * Imp1.getHeight();
+		int lengthOfImp2 = Imp2.getWidth() * Imp2.getHeight();
+		if (lengthOfImp1 != lengthOfImp2) {
+			System.out.println("[!] Error: ROI sizes are not equal!");
+		} else {
+			double[] xCoord = new double[lengthOfImp1];
+			double[] yCoord = new double[lengthOfImp2];
+			int XnonFinitiyCounts = 0;
+			int YnonFinitiyCounts = 0;
+			for (int i = 0; i < lengthOfImp1; i++) {
+
+				if (Float.isFinite(Imp1.getProcessor().getf(i))) {
+					xCoord[i] = Imp1.getProcessor().getf(i);
+				} else {// kick out non-Finite values of Imp1
+					XnonFinitiyCounts = XnonFinitiyCounts + 1;
+					xCoord[i] = 0;
+				}
+
+				if (Float.isFinite(Imp2.getProcessor().getf(i))) {
+					yCoord[i] = Imp2.getProcessor().getf(i);
+				} else {// kick out non-Finite values of Imp2
+					YnonFinitiyCounts = YnonFinitiyCounts + 1;
+					yCoord[i] = 0;
+				}
+
+			}
+
+			// Calculate the Correlation result.
+			double SSIMDoubleValue = DoubleArrayUtil.computeSSIMDoubleArrays(xCoord, yCoord);
+			returnSSIMDoubleValue = SSIMDoubleValue;
+
+		}
+		return returnSSIMDoubleValue;
+
 	}
 	
 	private void keepFOV(Grid2D phan)

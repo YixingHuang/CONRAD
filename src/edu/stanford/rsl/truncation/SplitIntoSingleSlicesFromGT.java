@@ -15,7 +15,7 @@ import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 import edu.stanford.rsl.conrad.data.numeric.NumericPointwiseOperators;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
 
-public class SplitIntoSingleSlices {
+public class SplitIntoSingleSlicesFromGT {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
@@ -31,15 +31,17 @@ public class SplitIntoSingleSlices {
 		File outPutDir;
 		for(int idx = 1; idx<=4; idx ++){
 			name1 = path + "reconTruncated" + idx + ".tif";
-			//name2 = path + "reconGT" + idx + ".tif";
-			name2 = path + "artifacts" + idx + ".tif";
+			name2 = path + "reconGT" + idx + ".tif";
+//			name2 = path + "artifacts" + idx + ".tif";
 			imp1=IJ.openImage(name1);
 			data = ImageUtil.wrapImagePlus(imp1);
 		
 			imp2=IJ.openImage(name2);
 			mask = ImageUtil.wrapImagePlus(imp2);
+			mask.getGridOperator().multiplyBy(mask, -1);
+			mask.getGridOperator().addBy(mask, data);
 			
-
+			
 			path3 = path2 + idx + "\\";
 			for(int i=0; i < data.getSize()[2]; i++) {
 				System.out.println( idx + ", " + i);

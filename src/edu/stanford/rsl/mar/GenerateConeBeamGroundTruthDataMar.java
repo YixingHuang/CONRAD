@@ -1,4 +1,4 @@
-package edu.stanford.rsl.sparseview;
+package edu.stanford.rsl.mar;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -21,7 +21,7 @@ import edu.stanford.rsl.conrad.filtering.PoissonNoiseFilteringTool;
 import edu.stanford.rsl.conrad.filtering.redundancy.ParkerWeightingTool;
 import edu.stanford.rsl.tutorial.weightedtv.TVOpenCLGridOperators;
 
-public class GenerateConeBeamGroundTruthDataSparseView {
+public class GenerateConeBeamGroundTruthDataMar {
 	public int factor = 2; //image size factor
 	protected int maxProjs;
 	public int imgSizeX;
@@ -45,11 +45,11 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 	public static void main(String[] args) throws Exception {
 		new ImageJ();
 		
-		String path = "D:\\wTVprocessedData\\"; //path for wTV data
-		String pathRecon = "C:\\Tasks\\FAU4\\SparseView\\recon\\";
-		String savePath = "C:\\Tasks\\FAU4\\SparseView\\projections\\";
+		String path = "D:\\Fau\\ws1920\\forschung\\wTVprocessedData\\"; //path for wTV data
+		String pathRecon = "D:\\Fau\\ws1920\\forschung\\recon\\";
+		String pathProj = "D:\\Fau\\ws1920\\forschung\\projection\\"; 
 		String saveName1;
-		GenerateConeBeamGroundTruthDataSparseView obj = new GenerateConeBeamGroundTruthDataSparseView(); 
+		GenerateConeBeamGroundTruthDataMar obj = new GenerateConeBeamGroundTruthDataMar(); 
 		obj.initialGeometry();
 		OpenCLGrid3D recon_no_leison;
 		
@@ -57,19 +57,20 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		//img.clone().show("img");
 		
 		ImagePlus imp1, imp2;
-		boolean isTumor = false;
-		boolean isNoisy = false;
-		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
+		boolean isMetal = true;
+		boolean isMask = false;
 		
-		Grid2D tempSino;
-		for(int i = 3; i <= 3; i++){
+		
+		boolean isNoisy = false;
+
+		for(int i = 1; i <= 1; i++){
 		//int i = 1;
 			obj.cbp=new ConeBeamProjector();
 			obj.cbbp=new ConeBeamBackprojector();
-			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i, isTumor));
+			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i, isMetal, isMask));
 			obj.rescaleData(obj.volCL);
 			recon_no_leison = new OpenCLGrid3D(obj.volCL);
-			//obj.addTumors(obj.volCL);
+
 			//obj.volCL.clone().show("volCL");
 			obj.volCL.setSpacing(1.25, 1.25, 1);
 			obj.volCL.setOrigin(obj.geo.getOriginX(), obj.geo.getOriginY(), obj.geo.getOriginZ());
@@ -86,46 +87,66 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 				obj.addPoissonNoise3D(obj.sinogram);
 			
 			imp1 = ImageUtil.wrapGrid(obj.sinogram, null);
-			saveName1 = savePath + "projection" +i + ".tif";
+			if(isMetal && (!isMask))
+			{
+				String pathMask = pathProj + "projection" +i + "Mask.tif";
+				imp2 = IJ.openImage(pathMask);
+				Grid3D temp = ImageUtil.wrapImagePlus(imp2);
+				temp.getGridOperator().multiplyBy(temp, obj.sinogram);
+				imp1 = ImageUtil.wrapGrid(temp, null);
+			}
+			else
+				imp1 = ImageUtil.wrapGrid(obj.sinogram, null);
+			
+			
+			if(isMask)
+			{
+				obj.getMask(obj.sinogram);
+				saveName1 = pathProj + "projection" +i + "Mask.tif";
+			}
+			else if(isMetal)
+				saveName1 = pathProj + "projection" +i + "Metal.tif";
+			else
+				saveName1 = pathProj + "projection" +i + ".tif";
 		    IJ.saveAs(imp1, "Tiff", saveName1);
-			
-			obj.FDKReconstruction(obj.sinogram);
-			obj.artifactCL = new OpenCLGrid3D(obj.reconCL);
-			//obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, obj.volCL);
-			obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, recon_no_leison);
-			obj.volCL.getGridOperator().divideBy(obj.volCL, 0.07f);
-			obj.reconCL.getGridOperator().divideBy(obj.reconCL, 0.07f);
-			obj.artifactCL.getGridOperator().divideBy(obj.artifactCL, 0.07f);
-			obj.saveTrainingData(pathRecon, obj.volCL, obj.reconCL, obj.artifactCL, i);
-			//obj.saveFullReconData(pathRecon, obj.reconCL, i);
-			obj.volCL.release();
-			obj.reconCL.release();
-			obj.artifactCL.release();
-			
+			if(!isMask)
+			{
+				obj.FDKReconstruction(obj.sinogram);
+				obj.artifactCL = new OpenCLGrid3D(obj.reconCL);
+				//obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, obj.volCL);
+				obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, recon_no_leison);
+				obj.volCL.getGridOperator().divideBy(obj.volCL, 0.07f);
+				obj.reconCL.getGridOperator().divideBy(obj.reconCL, 0.07f);
+				obj.artifactCL.getGridOperator().divideBy(obj.artifactCL, 0.07f);
+				obj.saveTrainingData(pathRecon, obj.volCL, obj.reconCL, obj.artifactCL, i, isMetal);
+				//obj.saveFullReconData(pathRecon, obj.reconCL, i);
+				obj.volCL.release();
+				obj.reconCL.release();
+				obj.artifactCL.release();
+			}
 			System.out.println(i);
 			
 		}
     }
 	
-	private void addTumors(Grid3D gtImages){
-		float tumor = 0.1f * 0.07f;
-		int xcent = 230, ycent = 95;
-		for(int i = -5; i <=5; i++){
-			for(int j = -5; j <= 5; j ++){
-				for(int k = 0; k < gtImages.getSize()[2]; k++){
-					if((i-0.5)*(i-0.5)+(j-0.5)*(j-0.5)<= 25)
-						gtImages.setAtIndex(xcent + i , ycent + j, k, gtImages.getAtIndex(xcent+i, ycent+j, k) + tumor);
-				}
-			}
-		}
+
+	private void getMask(Grid3D projections)
+	{
+		for(int i = 0; i < projections.getSize()[0]; i++)
+			for(int j = 0; j < projections.getSize()[1]; j++)
+				for(int k = 0; k < projections.getSize()[2]; k++)
+					if(projections.getAtIndex(i, j, k) > 0)
+						projections.setAtIndex(i, j, k, 0);
+					else
+						projections.setAtIndex(i, j, k, 1);
 	}
 	
-	private void addTumors2(Grid3D gtImages){
-		float tumor = 200.f;
-		int xcent = 230, ycent = 95;
+	private void addMetal(Grid3D gtImages){
+		float tumor = 60000.f; //Unit  HU
+		int xcent = 128, ycent = 128;
 		for(int i = -5; i <=5; i++){
 			for(int j = -5; j <= 5; j ++){
-				for(int k = 0; k < gtImages.getSize()[2]; k++){
+				for(int k = 50; k < 80; k++){
 					if((i-0.5)*(i-0.5)+(j-0.5)*(j-0.5)<= 25)
 						gtImages.setAtIndex(xcent + i , ycent + j, k, gtImages.getAtIndex(xcent+i, ycent+j, k) + tumor);
 				}
@@ -142,8 +163,7 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 	private void addPoissonNoise(Grid2D sinogram) throws Exception{
 		//Grid2D noise = new Grid2D(sinogram);
 
-//		float photonNumber = 1.e5f;//regular dose
-		float photonNumber = 1.e7f;//sparse view
+		float photonNumber = 1.e5f;
 		double val;
 		float amp = 2.f;//transfer the intensity to linear attenuation coefficient, water 0.02/mm, pixel size 0.5mm
 		sinogram.getGridOperator().divideBy(sinogram, amp);
@@ -247,20 +267,30 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		fullRecons.getGridOperator().copy(fullRecons, temp);
 	}
 	
-	public Grid3D getGroundTruthData(String path, int ii, boolean isTumor){
+	public Grid3D getGroundTruthData(String path, int ii, boolean isTumor, boolean isMask){
 		String pathTemp;
 		ImagePlus imp;
 		Grid3D gtImages = new Grid3D(256, 256, 256);
-		Grid3D imgTemp;
-		pathTemp = path + ii + ".tif";
-		imp=IJ.openImage(pathTemp);
-		imgTemp = ImageUtil.wrapImagePlus(imp);
-		if(isTumor)
-			addTumors2(imgTemp);
-		for(int j = 0; j < gtImages.getSize()[2]; j ++)
+		if(isMask)
 		{
-				gtImages.setSubGrid(j, downSampling(imgTemp.getSubGrid(j)));
+			
 		}
+		else
+		{
+			Grid3D imgTemp;
+			pathTemp = path + ii + ".tif";
+			imp=IJ.openImage(pathTemp);
+			imgTemp = ImageUtil.wrapImagePlus(imp);
+			for(int j = 0; j < gtImages.getSize()[2]; j ++)
+			{
+					gtImages.setSubGrid(j, downSampling(imgTemp.getSubGrid(j)));
+			}
+		}
+		
+			
+		if(isTumor)
+			addMetal(gtImages);
+		
 
 		return gtImages;
 	}
@@ -302,15 +332,26 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 	
 	
 	
-	public void saveTrainingData(String path, Grid3D reconGT, Grid3D reconLimited, Grid3D artifacts, int index){
+	public void saveTrainingData(String path, Grid3D reconGT, Grid3D reconLimited, Grid3D artifacts, int index, boolean isMetal){
 		ImagePlus imp1,imp2, imp3;
 		
 			imp1 = ImageUtil.wrapGrid(reconGT, null);
-			IJ.saveAs(imp1, "Tiff", (path + "reconGT" + index + ".tif"));
+			
 			imp2 = ImageUtil.wrapGrid(reconLimited, null);
-			IJ.saveAs(imp2, "Tiff", (path + "reconTruncated" + index + ".tif"));
+			
 			imp3 = ImageUtil.wrapGrid(artifacts, null);
-			IJ.saveAs(imp3, "Tiff", (path + "artifacts" + index + ".tif"));
+			
+			if(isMetal)
+			{
+				IJ.saveAs(imp1, "Tiff", (path + "reconGT" + index + "Metal.tif"));
+				IJ.saveAs(imp2, "Tiff", (path + "reconTruncated" + index + "Metal.tif"));
+				IJ.saveAs(imp3, "Tiff", (path + "artifacts" + index + "Metal.tif"));
+			}else
+			{
+				IJ.saveAs(imp1, "Tiff", (path + "reconGT" + index + ".tif"));
+				IJ.saveAs(imp2, "Tiff", (path + "reconTruncated" + index + ".tif"));
+				IJ.saveAs(imp3, "Tiff", (path + "artifacts" + index + ".tif"));
+			}
 		
 		
 	}

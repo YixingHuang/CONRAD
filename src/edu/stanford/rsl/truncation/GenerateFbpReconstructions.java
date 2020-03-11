@@ -1,4 +1,4 @@
-package edu.stanford.rsl.sparseview;
+package edu.stanford.rsl.truncation;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -21,7 +21,7 @@ import edu.stanford.rsl.conrad.filtering.PoissonNoiseFilteringTool;
 import edu.stanford.rsl.conrad.filtering.redundancy.ParkerWeightingTool;
 import edu.stanford.rsl.tutorial.weightedtv.TVOpenCLGridOperators;
 
-public class GenerateConeBeamGroundTruthDataSparseView {
+public class GenerateFbpReconstructions {
 	public int factor = 2; //image size factor
 	protected int maxProjs;
 	public int imgSizeX;
@@ -46,10 +46,10 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		new ImageJ();
 		
 		String path = "D:\\wTVprocessedData\\"; //path for wTV data
-		String pathRecon = "C:\\Tasks\\FAU4\\SparseView\\recon\\";
-		String savePath = "C:\\Tasks\\FAU4\\SparseView\\projections\\";
+		String pathRecon = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\recon\\";
+		String savePath = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\projections\\";
 		String saveName1;
-		GenerateConeBeamGroundTruthDataSparseView obj = new GenerateConeBeamGroundTruthDataSparseView(); 
+		GenerateFbpReconstructions obj = new GenerateFbpReconstructions(); 
 		obj.initialGeometry();
 		OpenCLGrid3D recon_no_leison;
 		
@@ -59,49 +59,33 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		ImagePlus imp1, imp2;
 		boolean isTumor = false;
 		boolean isNoisy = false;
+		float numTrunc = 350;
 		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
-		
+		WaterCylinderExtrapolation2DFan wceObj = new WaterCylinderExtrapolation2DFan(obj.height, (int)numTrunc);
 		Grid2D tempSino;
-		for(int i = 3; i <= 3; i++){
-		//int i = 1;
+		for(int i = 2; i <= 18; i++){
+			if(i == 4)
+				continue;
 			obj.cbp=new ConeBeamProjector();
 			obj.cbbp=new ConeBeamBackprojector();
-			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i, isTumor));
-			obj.rescaleData(obj.volCL);
-			recon_no_leison = new OpenCLGrid3D(obj.volCL);
-			//obj.addTumors(obj.volCL);
-			//obj.volCL.clone().show("volCL");
-			obj.volCL.setSpacing(1.25, 1.25, 1);
-			obj.volCL.setOrigin(obj.geo.getOriginX(), obj.geo.getOriginY(), obj.geo.getOriginZ());
 			
-			obj.getMeasuredSinoCL();
 
+			saveName1 = savePath + "projection" +i + ".tif";
+			imp1 = IJ.openImage(saveName1);
+			obj.sinogram = ImageUtil.wrapImagePlus(imp1);
+			obj.sinoCL = new OpenCLGrid3D(obj.sinogram);
+			op.truncateProjections(obj.sinoCL, numTrunc);
 			obj.sinogram = new Grid3D(obj.sinoCL);
 			obj.sinoCL.release();
-			
-
-			//obj.sinogram.clone().show("sinogram");
-		    
-			if(isNoisy)
-				obj.addPoissonNoise3D(obj.sinogram);
-			
-			imp1 = ImageUtil.wrapGrid(obj.sinogram, null);
-			saveName1 = savePath + "projection" +i + ".tif";
-		    IJ.saveAs(imp1, "Tiff", saveName1);
-			
+					
 			obj.FDKReconstruction(obj.sinogram);
-			obj.artifactCL = new OpenCLGrid3D(obj.reconCL);
-			//obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, obj.volCL);
-			obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, recon_no_leison);
-			obj.volCL.getGridOperator().divideBy(obj.volCL, 0.07f);
-			obj.reconCL.getGridOperator().divideBy(obj.reconCL, 0.07f);
-			obj.artifactCL.getGridOperator().divideBy(obj.artifactCL, 0.07f);
-			obj.saveTrainingData(pathRecon, obj.volCL, obj.reconCL, obj.artifactCL, i);
-			//obj.saveFullReconData(pathRecon, obj.reconCL, i);
-			obj.volCL.release();
-			obj.reconCL.release();
-			obj.artifactCL.release();
 			
+			obj.reconCL.getGridOperator().divideBy(obj.reconCL, 0.07f);
+			obj.saveTrainingData(pathRecon, obj.reconCL, i);
+			//obj.saveFullReconData(pathRecon, obj.reconCL, i);
+			
+			obj.reconCL.release();
+
 			System.out.println(i);
 			
 		}
@@ -142,8 +126,7 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 	private void addPoissonNoise(Grid2D sinogram) throws Exception{
 		//Grid2D noise = new Grid2D(sinogram);
 
-//		float photonNumber = 1.e5f;//regular dose
-		float photonNumber = 1.e7f;//sparse view
+		float photonNumber = 1.e5f;
 		double val;
 		float amp = 2.f;//transfer the intensity to linear attenuation coefficient, water 0.02/mm, pixel size 0.5mm
 		sinogram.getGridOperator().divideBy(sinogram, amp);
@@ -219,7 +202,6 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		
 		Grid3D reconFDK = cbbp.backprojectPixelDrivenCL(sinogram2);
 		reconCL= new OpenCLGrid3D(reconFDK);
-
 		//float scalCorrection = (float)( 260/(34.5*720000));
 		//reconCL.getGridOperator().multiplyBy(reconCL, scalCorrection);
 		//reconFDK = new Grid3D(reconCL);
@@ -302,15 +284,12 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 	
 	
 	
-	public void saveTrainingData(String path, Grid3D reconGT, Grid3D reconLimited, Grid3D artifacts, int index){
-		ImagePlus imp1,imp2, imp3;
-		
-			imp1 = ImageUtil.wrapGrid(reconGT, null);
-			IJ.saveAs(imp1, "Tiff", (path + "reconGT" + index + ".tif"));
-			imp2 = ImageUtil.wrapGrid(reconLimited, null);
-			IJ.saveAs(imp2, "Tiff", (path + "reconTruncated" + index + ".tif"));
-			imp3 = ImageUtil.wrapGrid(artifacts, null);
-			IJ.saveAs(imp3, "Tiff", (path + "artifacts" + index + ".tif"));
+	public void saveTrainingData(String path, Grid3D reconLimited, int index){
+		ImagePlus imp2;
+
+			
+		imp2 = ImageUtil.wrapGrid(reconLimited, null);
+		IJ.saveAs(imp2, "Tiff", (path + "reconFbp" + index + ".tif"));
 		
 		
 	}

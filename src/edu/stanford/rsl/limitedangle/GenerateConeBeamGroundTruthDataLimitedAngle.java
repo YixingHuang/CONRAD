@@ -1,4 +1,4 @@
-package edu.stanford.rsl.sparseview;
+package edu.stanford.rsl.limitedangle;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -21,7 +21,7 @@ import edu.stanford.rsl.conrad.filtering.PoissonNoiseFilteringTool;
 import edu.stanford.rsl.conrad.filtering.redundancy.ParkerWeightingTool;
 import edu.stanford.rsl.tutorial.weightedtv.TVOpenCLGridOperators;
 
-public class GenerateConeBeamGroundTruthDataSparseView {
+public class GenerateConeBeamGroundTruthDataLimitedAngle {
 	public int factor = 2; //image size factor
 	protected int maxProjs;
 	public int imgSizeX;
@@ -46,12 +46,12 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		new ImageJ();
 		
 		String path = "D:\\wTVprocessedData\\"; //path for wTV data
-		String pathRecon = "C:\\Tasks\\FAU4\\SparseView\\recon\\";
-		String savePath = "C:\\Tasks\\FAU4\\SparseView\\projections\\";
+		String pathRecon = "C:\\Tasks\\FAU4\\LimitedAngle\\Noisy3D\\150Degree\\recon\\";
+		String savePath = "C:\\Tasks\\FAU4\\LimitedAngle\\Noisy3D\\150Degree\\projections\\";
 		String saveName1;
-		GenerateConeBeamGroundTruthDataSparseView obj = new GenerateConeBeamGroundTruthDataSparseView(); 
+		GenerateConeBeamGroundTruthDataLimitedAngle obj = new GenerateConeBeamGroundTruthDataLimitedAngle(); 
 		obj.initialGeometry();
-		OpenCLGrid3D recon_no_leison;
+
 		
 		//Grid3D img = obj.getOriginalGroundTruthData(path, 7);
 		//img.clone().show("img");
@@ -61,14 +61,14 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		boolean isNoisy = false;
 		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
 		
-		Grid2D tempSino;
-		for(int i = 3; i <= 3; i++){
+	
+		for(int i = 1; i <= 19; i++){
 		//int i = 1;
 			obj.cbp=new ConeBeamProjector();
 			obj.cbbp=new ConeBeamBackprojector();
 			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i, isTumor));
 			obj.rescaleData(obj.volCL);
-			recon_no_leison = new OpenCLGrid3D(obj.volCL);
+//			recon_no_leison = new OpenCLGrid3D(obj.volCL);
 			//obj.addTumors(obj.volCL);
 			//obj.volCL.clone().show("volCL");
 			obj.volCL.setSpacing(1.25, 1.25, 1);
@@ -91,8 +91,8 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 			
 			obj.FDKReconstruction(obj.sinogram);
 			obj.artifactCL = new OpenCLGrid3D(obj.reconCL);
-			//obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, obj.volCL);
-			obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, recon_no_leison);
+			obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, obj.volCL);
+//			obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, recon_no_leison);
 			obj.volCL.getGridOperator().divideBy(obj.volCL, 0.07f);
 			obj.reconCL.getGridOperator().divideBy(obj.reconCL, 0.07f);
 			obj.artifactCL.getGridOperator().divideBy(obj.artifactCL, 0.07f);
@@ -106,20 +106,7 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 			
 		}
     }
-	
-	private void addTumors(Grid3D gtImages){
-		float tumor = 0.1f * 0.07f;
-		int xcent = 230, ycent = 95;
-		for(int i = -5; i <=5; i++){
-			for(int j = -5; j <= 5; j ++){
-				for(int k = 0; k < gtImages.getSize()[2]; k++){
-					if((i-0.5)*(i-0.5)+(j-0.5)*(j-0.5)<= 25)
-						gtImages.setAtIndex(xcent + i , ycent + j, k, gtImages.getAtIndex(xcent+i, ycent+j, k) + tumor);
-				}
-			}
-		}
-	}
-	
+		
 	private void addTumors2(Grid3D gtImages){
 		float tumor = 200.f;
 		int xcent = 230, ycent = 95;
@@ -142,8 +129,8 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 	private void addPoissonNoise(Grid2D sinogram) throws Exception{
 		//Grid2D noise = new Grid2D(sinogram);
 
-//		float photonNumber = 1.e5f;//regular dose
-		float photonNumber = 1.e7f;//sparse view
+		float photonNumber = 1.e5f;//regular dose
+
 		double val;
 		float amp = 2.f;//transfer the intensity to linear attenuation coefficient, water 0.02/mm, pixel size 0.5mm
 		sinogram.getGridOperator().divideBy(sinogram, amp);
@@ -207,22 +194,22 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		{
 			//parker.setImageIndex(i);
 			//parker.applyToolToImage(sinogram2.getSubGrid(i));
-		
-			sinogram2.setSubGrid(i, (Grid2D) sinogram.getSubGrid(i).clone());
-			cbFilter.applyToGrid(sinogram2.getSubGrid(i));
+			if(i<15)
+				sinogram2.getGridOperator().fill(sinogram2.getSubGrid(i), 0);
+			else{
+				sinogram2.setSubGrid(i, (Grid2D) sinogram.getSubGrid(i).clone());
+				cbFilter.applyToGrid(sinogram2.getSubGrid(i));
 			//ramp
-			for (int j = 0;j <height; ++j)
-				ramK.applyToGrid(sinogram2.getSubGrid(i).getSubGrid(j));
-			System.out.print(i + " ");
+				for (int j = 0;j <height; ++j)
+					ramK.applyToGrid(sinogram2.getSubGrid(i).getSubGrid(j));
+			}
 		}
-		System.out.println(" ");
 		
 		Grid3D reconFDK = cbbp.backprojectPixelDrivenCL(sinogram2);
 		reconCL= new OpenCLGrid3D(reconFDK);
-
 		//float scalCorrection = (float)( 260/(34.5*720000));
 		//reconCL.getGridOperator().multiplyBy(reconCL, scalCorrection);
-		//reconFDK = new Grid3D(reconCL);
+		reconFDK = new Grid3D(reconCL);
 		//reconFDK.show("FDK reconstruction");	
 		
 	}
