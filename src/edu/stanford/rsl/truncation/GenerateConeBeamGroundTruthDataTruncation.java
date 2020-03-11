@@ -45,9 +45,9 @@ public class GenerateConeBeamGroundTruthDataTruncation {
 	public static void main(String[] args) throws Exception {
 		new ImageJ();
 		
-		String path = "D:\\wTVprocessedData\\"; //path for wTV data
-		String pathRecon = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\recon\\";
-		String savePath = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\projections\\";
+		String path = "D:\\tasks\\FAU4\\Lab\\DeepLearningData\\wTVprocessedData\\"; //path for wTV data
+		String pathRecon = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\recon\\";
+		String savePath = "D:\\tasks\\FAU4\\Lab\\TruncationCorrection\\Noisy3D\\projections\\";
 		String saveName1;
 		GenerateConeBeamGroundTruthDataTruncation obj = new GenerateConeBeamGroundTruthDataTruncation(); 
 		obj.initialGeometry();
@@ -58,13 +58,14 @@ public class GenerateConeBeamGroundTruthDataTruncation {
 		
 		ImagePlus imp1, imp2;
 		boolean isTumor = false;
-		boolean isNoisy = true;
-		float numTrunc = 350;
+		boolean isNoisy = false;
+		float numTrunc = 375;
 		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
 		WaterCylinderExtrapolation2DFan wceObj = new WaterCylinderExtrapolation2DFan(obj.height, (int)numTrunc);
 		Grid2D tempSino;
 		for(int i = 18; i <= 18; i++){
-		//int i = 1;
+			if(i == 4)
+				continue;
 			obj.cbp=new ConeBeamProjector();
 			obj.cbbp=new ConeBeamBackprojector();
 			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i, isTumor));
@@ -76,22 +77,29 @@ public class GenerateConeBeamGroundTruthDataTruncation {
 			obj.volCL.setOrigin(obj.geo.getOriginX(), obj.geo.getOriginY(), obj.geo.getOriginZ());
 			
 			obj.getMeasuredSinoCL();
+			imp1 = ImageUtil.wrapGrid(obj.sinoCL, null);
+			saveName1 = savePath + "projectionFull" +i + ".tif";
+		    IJ.saveAs(imp1, "Tiff", saveName1);
 			op.truncateProjections(obj.sinoCL, numTrunc);
+			imp1 = ImageUtil.wrapGrid(obj.sinoCL, null);
+			saveName1 = savePath + "projectionTruncated" +i + ".tif";
+		    IJ.saveAs(imp1, "Tiff", saveName1);
 			obj.sinogram = new Grid3D(obj.sinoCL);
 			obj.sinoCL.release();
-//			for(int projIdx = 0; projIdx < obj.maxProjs; projIdx++)
-//			{
-//				tempSino = wceObj.run2DWaterCylinderExtrapolation(obj.sinogram.getSubGrid(projIdx));
-//				obj.sinogram.setSubGrid(projIdx, tempSino);
-//				System.out.print(projIdx + " ");
-//			}
-//			System.out.println(" ");
+			if(isNoisy)
+				obj.addPoissonNoise3D(obj.sinogram);
+			for(int projIdx = 0; projIdx < obj.maxProjs; projIdx++)
+			{
+				tempSino = wceObj.run2DWaterCylinderExtrapolation(obj.sinogram.getSubGrid(projIdx));
+				obj.sinogram.setSubGrid(projIdx, tempSino);
+				System.out.print(projIdx + " ");
+			}
+			System.out.println(" ");
 			
 
 			//obj.sinogram.clone().show("sinogram");
 		    
-			if(isNoisy)
-				obj.addPoissonNoise3D(obj.sinogram);
+
 			
 			imp1 = ImageUtil.wrapGrid(obj.sinogram, null);
 			saveName1 = savePath + "projection" +i + ".tif";
@@ -106,10 +114,10 @@ public class GenerateConeBeamGroundTruthDataTruncation {
 			obj.artifactCL.getGridOperator().divideBy(obj.artifactCL, 0.07f);
 			obj.saveTrainingData(pathRecon, obj.volCL, obj.reconCL, obj.artifactCL, i);
 			//obj.saveFullReconData(pathRecon, obj.reconCL, i);
-			obj.volCL.release();
+			
 			obj.reconCL.release();
 			obj.artifactCL.release();
-			
+			obj.volCL.release();
 			System.out.println(i);
 			
 		}
@@ -311,12 +319,15 @@ public class GenerateConeBeamGroundTruthDataTruncation {
 	public void saveTrainingData(String path, Grid3D reconGT, Grid3D reconLimited, Grid3D artifacts, int index){
 		ImagePlus imp1,imp2, imp3;
 		
-//			imp1 = ImageUtil.wrapGrid(reconGT, null);
-//			IJ.saveAs(imp1, "Tiff", (path + "reconGT" + index + ".tif"));
+			imp1 = ImageUtil.wrapGrid(reconGT, null);
+			IJ.saveAs(imp1, "Tiff", (path + "reconGT" + index + ".tif"));
 			imp2 = ImageUtil.wrapGrid(reconLimited, null);
 			IJ.saveAs(imp2, "Tiff", (path + "reconTruncated" + index + ".tif"));
-//			imp3 = ImageUtil.wrapGrid(artifacts, null);
-//			IJ.saveAs(imp3, "Tiff", (path + "artifacts" + index + ".tif"));
+			imp3 = ImageUtil.wrapGrid(artifacts, null);
+			IJ.saveAs(imp3, "Tiff", (path + "artifacts" + index + ".tif"));
+			
+//			imp2 = ImageUtil.wrapGrid(reconLimited, null);
+//			IJ.saveAs(imp2, "Tiff", (path + "reconFbp" + index + ".tif"));
 		
 		
 	}

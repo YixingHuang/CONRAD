@@ -19,8 +19,8 @@ public class SplitIntoSingleSlices {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
-		String path = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\recon\\";
-		String path2 = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\testData_d1\\";
+		String path = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\90Degree\\recon\\";
+		String path2 = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\90Degree\\testData_d1\\";
 		String path3;
 		ImagePlus imp1, imp2;
 		String name1, name2, saveName1, saveName2;
@@ -29,10 +29,10 @@ public class SplitIntoSingleSlices {
 		int saveIndex, getIndex;
 		String path4, path5;
 		File outPutDir;
-		for(int idx = 1; idx<=18; idx ++){
+		for(int idx = 18; idx<=18; idx ++){
 			name1 = path + "reconTruncated" + idx + ".tif";
-			//name2 = path + "reconGT" + idx + ".tif";
-			name2 = path + "artifacts" + idx + ".tif";
+			name2 = path + "reconGT" + idx + ".tif";
+			//name2 = path + "artifacts" + idx + ".tif";
 			imp1=IJ.openImage(name1);
 			data = ImageUtil.wrapImagePlus(imp1);
 		

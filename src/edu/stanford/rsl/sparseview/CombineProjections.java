@@ -21,7 +21,7 @@ import edu.stanford.rsl.conrad.filtering.PoissonNoiseFilteringTool;
 import edu.stanford.rsl.conrad.filtering.redundancy.ParkerWeightingTool;
 import edu.stanford.rsl.tutorial.weightedtv.TVOpenCLGridOperators;
 
-public class GenerateConeBeamGroundTruthDataSparseView {
+public class CombineProjections {
 	public int factor = 2; //image size factor
 	protected int maxProjs;
 	public int imgSizeX;
@@ -39,17 +39,18 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 	public ConeBeamProjector cbp;
 	public ConeBeamBackprojector cbbp;
 	
-	public OpenCLGrid3D sinoCL, volCL, reconCL, artifactCL;
+	public OpenCLGrid3D sinoCL, sinoCL2, volCL, reconCL, artifactCL;
 	public Grid3D sinogram;
 	
 	public static void main(String[] args) throws Exception {
 		new ImageJ();
 		
 		String path = "D:\\wTVprocessedData\\"; //path for wTV data
-		String pathRecon = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\90Degree\\recon\\";
-		String savePath = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\90Degree\\projections\\";
+		String unetRecon = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\30Degree\\UNetRecons\\";
+		String savePath = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\30Degree\\reprojections\\";
+		String sinoPath = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\30Degree\\projections\\";
 		String saveName1;
-		GenerateConeBeamGroundTruthDataSparseView obj = new GenerateConeBeamGroundTruthDataSparseView(); 
+		CombineProjections obj = new CombineProjections(); 
 		obj.initialGeometry();
 		OpenCLGrid3D recon_no_leison;
 		
@@ -57,51 +58,40 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		//img.clone().show("img");
 		
 		ImagePlus imp1, imp2;
-		boolean isTumor = false;
-		boolean isNoisy = true;
+	
 		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
-		
+
 		Grid2D tempSino;
-		for(int i = 19; i <= 19; i++){
+		String pathTemp;
+		Grid3D imgTemp;
+		for(int i = 18; i <= 18; i++){
 		//int i = 1;
 			obj.cbp=new ConeBeamProjector();
 			obj.cbbp=new ConeBeamBackprojector();
-			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i, isTumor));
-			obj.rescaleData(obj.volCL);
-			recon_no_leison = new OpenCLGrid3D(obj.volCL);
-			//obj.addTumors(obj.volCL);
-			//obj.volCL.clone().show("volCL");
-			obj.volCL.setSpacing(1.25, 1.25, 1);
-			obj.volCL.setOrigin(obj.geo.getOriginX(), obj.geo.getOriginY(), obj.geo.getOriginZ());
+			pathTemp = sinoPath + "projection" + i + ".tif";
+			imp2 = IJ.openImage(pathTemp);
+			imgTemp = ImageUtil.wrapImagePlus(imp2);
+			obj.sinoCL = new OpenCLGrid3D(imgTemp);
+			obj.sinoCL.getDelegate().prepareForDeviceOperation();
 			
-			obj.getMeasuredSinoCL();
+			pathTemp = unetRecon + "\\UNetP" + i + ".tif";
+			imp2 = IJ.openImage(pathTemp);
+			imgTemp = ImageUtil.wrapImagePlus(imp2);
+			obj.volCL = new OpenCLGrid3D(imgTemp);
+			obj.volCL.getGridOperator().multiplyBy(obj.volCL, 0.07f);
+			obj.volCL.getGridOperator().removeNegative(obj.volCL);
+			obj.getMeasuredSinoCL2();
+			obj.sinoCL2.show("sino2");
 
-			obj.sinogram = new Grid3D(obj.sinoCL);
+			op.combineSparseProjections(obj.sinoCL2, obj.sinoCL, 12.0f);
+			obj.sinoCL2.show("combined sino");
+			obj.sinogram = new Grid3D(obj.sinoCL2);
 			obj.sinoCL.release();
-			
-
-			//obj.sinogram.clone().show("sinogram");
-		    
-			if(isNoisy)
-				obj.addPoissonNoise3D(obj.sinogram);
-			
+			obj.sinoCL2.release();
+			obj.volCL.release();
 			imp1 = ImageUtil.wrapGrid(obj.sinogram, null);
 			saveName1 = savePath + "projection" +i + ".tif";
 		    IJ.saveAs(imp1, "Tiff", saveName1);
-			
-			obj.FDKReconstruction(obj.sinogram);
-			obj.artifactCL = new OpenCLGrid3D(obj.reconCL);
-			//obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, obj.volCL);
-			obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, recon_no_leison);
-			obj.volCL.getGridOperator().divideBy(obj.volCL, 0.07f);
-			obj.reconCL.getGridOperator().divideBy(obj.reconCL, 0.07f);
-			obj.artifactCL.getGridOperator().divideBy(obj.artifactCL, 0.07f);
-			obj.saveTrainingData(pathRecon, obj.volCL, obj.reconCL, obj.artifactCL, i);
-			//obj.saveFullReconData(pathRecon, obj.reconCL, i);
-			obj.volCL.release();
-			obj.reconCL.release();
-			obj.artifactCL.release();
-			
 			System.out.println(i);
 			
 		}
@@ -142,8 +132,7 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 	private void addPoissonNoise(Grid2D sinogram) throws Exception{
 		//Grid2D noise = new Grid2D(sinogram);
 
-//		float photonNumber = 1.e5f;//regular dose
-		float photonNumber = 1.e7f;//sparse view
+		float photonNumber = 1.e5f;
 		double val;
 		float amp = 2.f;//transfer the intensity to linear attenuation coefficient, water 0.02/mm, pixel size 0.5mm
 		sinogram.getGridOperator().divideBy(sinogram, amp);
@@ -219,7 +208,6 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		
 		Grid3D reconFDK = cbbp.backprojectPixelDrivenCL(sinogram2);
 		reconCL= new OpenCLGrid3D(reconFDK);
-
 		//float scalCorrection = (float)( 260/(34.5*720000));
 		//reconCL.getGridOperator().multiplyBy(reconCL, scalCorrection);
 		//reconFDK = new Grid3D(reconCL);
@@ -231,6 +219,13 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 		sinoCL = new OpenCLGrid3D(new Grid3D(width, height, maxProjs));
 		sinoCL.getDelegate().prepareForDeviceOperation();
 		cbp.fastProjectRayDrivenCL(sinoCL, volCL);
+		//sinoCL.show("sinoCL");
+	}
+	
+	public void getMeasuredSinoCL2() throws Exception {
+		sinoCL2 = new OpenCLGrid3D(new Grid3D(width, height, maxProjs));
+		sinoCL2.getDelegate().prepareForDeviceOperation();
+		cbp.fastProjectRayDrivenCL(sinoCL2, volCL);
 		//sinoCL.show("sinoCL");
 	}
 	
@@ -308,7 +303,7 @@ public class GenerateConeBeamGroundTruthDataSparseView {
 			imp1 = ImageUtil.wrapGrid(reconGT, null);
 			IJ.saveAs(imp1, "Tiff", (path + "reconGT" + index + ".tif"));
 			imp2 = ImageUtil.wrapGrid(reconLimited, null);
-			IJ.saveAs(imp2, "Tiff", (path + "reconTruncated" + index + ".tif"));
+			IJ.saveAs(imp2, "Tiff", (path + "reconLimited" + index + ".tif"));
 			imp3 = ImageUtil.wrapGrid(artifacts, null);
 			IJ.saveAs(imp3, "Tiff", (path + "artifacts" + index + ".tif"));
 		
