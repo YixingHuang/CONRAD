@@ -46,9 +46,9 @@ public class CombineProjections {
 		new ImageJ();
 		
 		String path = "D:\\wTVprocessedData\\"; //path for wTV data
-		String unetRecon = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\UNetRecons\\";
-		String savePath = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\reprojections\\";
-		String sinoPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\projections\\";
+		String unetRecon = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\testData_d1\\";
+		String savePath = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\reprojections\\";
+		String sinoPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\projections\\";
 		String saveName1;
 		CombineProjections obj = new CombineProjections(); 
 		obj.initialGeometry();
@@ -66,8 +66,7 @@ public class CombineProjections {
 		String pathTemp;
 		Grid3D imgTemp;
 		for(int i = 18; i <= 18; i++){
-			if(i == 4)
-				continue;
+		//int i = 1;
 			obj.cbp=new ConeBeamProjector();
 			obj.cbbp=new ConeBeamBackprojector();
 			pathTemp = sinoPath + "projection" + i + ".tif";
@@ -76,17 +75,17 @@ public class CombineProjections {
 			obj.sinoCL = new OpenCLGrid3D(imgTemp);
 			obj.sinoCL.getDelegate().prepareForDeviceOperation();
 			
-			pathTemp = unetRecon + "UNetP" + i + ".tif";
+			pathTemp = unetRecon + i + "\\UNet.tif";
 			imp2 = IJ.openImage(pathTemp);
 			imgTemp = ImageUtil.wrapImagePlus(imp2);
 			obj.volCL = new OpenCLGrid3D(imgTemp);
 			obj.volCL.getGridOperator().multiplyBy(obj.volCL, 0.07f);
 			obj.volCL.getGridOperator().removeNegative(obj.volCL);
 			obj.getMeasuredSinoCL2();
-//			obj.sinoCL2.show("sino2");
+			obj.sinoCL2.show("sino2");
 
 			op.combineProjections(obj.sinoCL, obj.sinoCL2, numTrunc);
-//			obj.sinoCL.show("combined sino");
+			obj.sinoCL.show("combined sino");
 			obj.sinogram = new Grid3D(obj.sinoCL);
 			obj.sinoCL.release();
 			obj.sinoCL2.release();

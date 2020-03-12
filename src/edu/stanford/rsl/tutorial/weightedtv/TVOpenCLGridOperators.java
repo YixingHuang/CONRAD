@@ -953,7 +953,6 @@ public class TVOpenCLGridOperators extends OpenCLGridOperators{
 		CLDevice device=clImgGrid.getDelegate().getCLDevice();
 		CLBuffer<FloatBuffer> clmemImg=clImgGrid.getDelegate().getCLBuffer();
 		runKernel("FOVmask",device,clmemImg,radius,imgGrid.getSize());
-		clImgGrid.getDelegate().notifyDeviceChange();
 	}
 	
 	
@@ -963,7 +962,6 @@ public class TVOpenCLGridOperators extends OpenCLGridOperators{
 		CLDevice device=clImgGrid.getDelegate().getCLDevice();
 		CLBuffer<FloatBuffer> clmemImg=clImgGrid.getDelegate().getCLBuffer();
 		runKernel("truncateProjections", device,clmemImg, numTrunc, imgGrid.getSize());
-		clImgGrid.getDelegate().notifyDeviceChange();
 	}
 
 	public void combineProjections(NumericGrid processed, NumericGrid proj, float numTrunc){
@@ -977,20 +975,6 @@ public class TVOpenCLGridOperators extends OpenCLGridOperators{
 		CLBuffer<FloatBuffer> clmemProcessed = clProcessed.getDelegate().getCLBuffer();
 		CLBuffer<FloatBuffer> clmemProj = clProj.getDelegate().getCLBuffer();
 		runKernel("combineProjections",device,clmemProcessed, clmemProj, numTrunc, proj.getSize());
-		clProcessed.getDelegate().notifyDeviceChange();
-	}
-	
-	public void combineSparseProjections(NumericGrid processed, NumericGrid proj, float scale){
-		OpenCLGridInterface clProcessed = (OpenCLGridInterface)processed;
-		OpenCLGridInterface clProj = (OpenCLGridInterface)proj;
-		
-		clProcessed.getDelegate().prepareForDeviceOperation();
-		clProj.getDelegate().prepareForDeviceOperation();
-		CLDevice device = clProcessed.getDelegate().getCLDevice();
-
-		CLBuffer<FloatBuffer> clmemProcessed = clProcessed.getDelegate().getCLBuffer();
-		CLBuffer<FloatBuffer> clmemProj = clProj.getDelegate().getCLBuffer();
-		runKernel("combineSparseProjections",device,clmemProcessed, clmemProj, scale, proj.getSize());
 		clProcessed.getDelegate().notifyDeviceChange();
 	}
 	

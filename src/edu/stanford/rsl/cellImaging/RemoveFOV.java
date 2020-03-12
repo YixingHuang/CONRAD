@@ -22,9 +22,9 @@ public class RemoveFOV {
 		
 		RemoveFOV obj = new RemoveFOV();
 		String folder = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100DegreePwls\\";
-		String path = folder + "reconFbp3D2Iter.tif";
+		String path = folder + "reconFbp3DCombinedOriginalP.tif";
 
-		String path4 = folder + "reconFbp3D2IterNoFOV.tif";
+		String path4 = folder + "reconFbp3DCombinedOriginalPNoFOV5.tif";
 		ImagePlus imp0 =IJ.openImage(path);
 		Grid3D vol = ImageUtil.wrapImagePlus(imp0);
 		vol.clone().show("horizontal");
@@ -32,7 +32,7 @@ public class RemoveFOV {
 			obj.keepFOV(vol.getSubGrid(i));
 		vol.getGridOperator().divideBy(vol, 75f);
 		vol.getGridOperator().removeNegative(vol);
-//		obj.applyWeight(vol);
+		obj.applyWeight(vol);
 		vol.clone().show("after FOV");
 		imp0 = ImageUtil.wrapGrid3D(vol, null);
 		IJ.saveAs(imp0, "Tiff", path4);

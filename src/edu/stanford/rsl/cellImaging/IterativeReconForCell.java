@@ -23,12 +23,10 @@ import ij.ImagePlus;
  */
 
 public class IterativeReconForCell {
-	private boolean isTruncated = true;
-	private int iterMax = 5;
+	private int iterMax = 1;
 	private int maxTVIter = 10;
 	private int startAngle = 20;
 	private int angularRange = 100;
-	private int extraNum = 256;
 	private ParallelProjector2D projector;
 	private ParallelBackprojector2D backprojector;
 	
@@ -46,11 +44,11 @@ public class IterativeReconForCell {
 	private Grid2D sinogram;
 	private Grid1D sino1D;
 	private Grid2D updGrid;
-	private boolean isInitial = false;
+	private boolean isInitial = true;
 	private Grid3D reconUNet;
-	private String initialPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100Degree\\reconSEUNet500Epoch20190917.tif";;
+	private String initialPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100Degree\\reconUNet500Epoch.tif";
 	private String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\wTV\\";
-	private Grid2D normGrid, normProj;
+	
 	private TVGradient tvOp;
 	private double step;
 	
@@ -58,42 +56,26 @@ public class IterativeReconForCell {
 		new ImageJ();
 		
 		IterativeReconForCell obj = new IterativeReconForCell();
-		boolean isTruncated = obj.isTruncated;
+		
 //		String path =  "D:\\Tasks\\FAU4\\CellImaging\\";
 //		ImagePlus imp0 =IJ.openImage(path+"projections.tif");
-		String path = "D:\\Tasks\\FAU4\\CellImaging\\AlgaeTestPhantomNoise10e5\\CombineProjections\\";
+		String path = "D:\\Tasks\\FAU4\\CellImaging\\CombineProjections\\";
 		ImagePlus imp0 =IJ.openImage(path+"sino3DReo.tif");
 		Grid3D proj0 = ImageUtil.wrapImagePlus(imp0);
 		proj0.show("projections");
-		proj0.getGridOperator().divideBy(proj0, 100.0f);
+		
 		Grid3D sinos = obj.reorderProjections(proj0);
 		
 		if(obj.isInitial)
-		{
 			obj.reconUNet = obj.read3DVolume(obj.initialPath);
-			obj.thresholding(obj.reconUNet, 0.19f);
-			obj.applyFovMask(obj.reconUNet);
-		}
 
 		ImagePlus imp, imp3D;
 		Grid2D sinoRaw;
 		sinoRaw = new Grid2D(obj.numDet, 180);
 		sinoRaw.setSpacing(obj.deltaS, obj.deltaTheta);
-		if(isTruncated)
-		{
-			Grid2D sinoTemp = new Grid2D(obj.numDet + obj.extraNum * 2, 180);
-			sinoTemp.setSpacing(obj.deltaS, obj.deltaTheta);
-			obj.projector = new ParallelProjector2D(Math.PI, obj.deltaTheta, (obj.numDet + obj.extraNum * 2) * obj.deltaS, obj.deltaS);
-			obj.backprojector = new ParallelBackprojector2D(obj.sizeX/obj.s * 2, obj.sizeY/obj.s * 2, obj.s, obj.s);
-			obj.backprojector.initSinogramParams(sinoTemp);
-		}
-		else
-		{
-			obj.projector = new ParallelProjector2D(Math.PI, obj.deltaTheta, (obj.numDet) * obj.deltaS, obj.deltaS);
-			obj.backprojector = new ParallelBackprojector2D(obj.sizeX/obj.s, obj.sizeY/obj.s, obj.s, obj.s);
-			obj.backprojector.initSinogramParams(sinoRaw);
-		}
-
+		obj.projector = new ParallelProjector2D(Math.PI, obj.deltaTheta, obj.numDet * obj.deltaS, obj.deltaS);
+		obj.backprojector = new ParallelBackprojector2D(obj.sizeX/obj.s, obj.sizeY/obj.s, obj.s, obj.s);
+		obj.backprojector.initSinogramParams(sinoRaw);
 		
 		obj.getNormProj();
 		obj.getNormGrids();
@@ -106,13 +88,9 @@ public class IterativeReconForCell {
 
 		float scale = 40.0f*180.0f/160.0f;
 	
-		if(isTruncated)
-			obj.recon = new Grid2D(obj.sizeX/obj.s * 2, obj.sizeY/obj.s * 2);
-		else
-			obj.recon = new Grid2D(obj.sizeX/obj.s, obj.sizeY/obj.s);
-		
+		obj.recon = new Grid2D(obj.sizeX/obj.s, obj.sizeY/obj.s);
 		obj.tvOp = new TVGradient(obj.recon);
-		obj.tvOp.weps = 0.001f;
+		obj.tvOp.weps = 0.0001f;
 		for(int imgIdx = 230; imgIdx <= 230 /*sinos.getSize()[2]*/; imgIdx = imgIdx + obj.zs )
 		{
 			
@@ -121,22 +99,12 @@ public class IterativeReconForCell {
 			{
 				obj.recon = (Grid2D)obj.reconUNet.getSubGrid(imgIdx).clone();
 				obj.recon.getGridOperator().divideBy(obj.recon, scale);
-				if(isTruncated)
-					obj.recon = obj.paddingRecon(obj.recon);
 				obj.tvOp.weightMatrixUpdate(obj.recon);
-				obj.recon.clone().show("recon0");
 			}
 			else
 				obj.recon.getGridOperator().fill(obj.recon, 0);
-
 			
 			sinoRaw = (Grid2D) sinos.getSubGrid(imgIdx).clone();
-
-			if(isTruncated)
-			{
-				sinoRaw = obj.extraSinogram(sinoRaw);
-			}
-
 			sinoRaw.setSpacing(1, Math.PI/180.0);
 			if(imgIdx == 0)
 				sinoRaw.show("The Sinogram");
@@ -148,13 +116,12 @@ public class IterativeReconForCell {
 			for(int iter = 0; iter < obj.iterMax; iter ++)
 			{
 				obj.runSart();
-				obj.runWTV();	
+				//obj.runWTV();	
 				System.out.print(" " + iter);
-				if(iter % 2 == 0)
+				if(iter == 0)
 					obj.recon.show("recon");
 			}
-			if(isTruncated)
-				obj.recon = obj.cropRecon(obj.recon);
+			
 			//obj.recon.getGridOperator().multiplyBy(obj.recon, scale);
 			recon3D.setSubGrid(imgIdx/obj.zs, (Grid2D)obj.recon.clone());
 			System.out.print("\n" + imgIdx + " \n");			
@@ -179,7 +146,7 @@ public class IterativeReconForCell {
 
 	private void runSart()
 	{
-		float beta = -0.01f/gridMean;
+		float beta = -0.1f/gridMean;
 		int startIdx = startAngle + 20;
 		int endIdx = startAngle + 20 + angularRange + 1;
 		if(isInitial)
@@ -187,79 +154,39 @@ public class IterativeReconForCell {
 			startIdx = 0;
 			endIdx = (int)(Math.PI/deltaTheta);
 		}
-		for(int projIdx = 0; projIdx < 180; projIdx ++)
+		for(int projIdx = startIdx; projIdx < endIdx; projIdx ++)
 		{
 			sino1D = projector.projectRayDriven1DCL(recon, projIdx);
 			//if(projIdx < 25 &&  projIdx > 20) {
-			if(projIdx == 50 || projIdx == 0) {
+			if(projIdx < 5) {
 				sino1D.clone().show("sino1D" + projIdx);
 				sinogram.getSubGrid(projIdx).clone().show("sino" + projIdx);
 			}
 				
 			sino1D.getGridOperator().subtractBy(sino1D, sinogram.getSubGrid(projIdx));
-			if(isTruncated)
-				truncateProjDiff(sino1D);
+		
 			if(projIdx < startAngle + 20 || projIdx >= startAngle + 20 + angularRange)
-				sino1D.getGridOperator().softThresholding(sino1D, 0.001f);
+				sino1D.getGridOperator().softThresholding(sino1D, 0.01f);
 			else
-				sino1D.getGridOperator().softThresholding(sino1D, 0.001f);
-//			sino1D.getGridOperator().divideBy(sino1D, sinoMean);
-			sino1D.getGridOperator().divideBy(sino1D, normProj.getSubGrid(projIdx));
+				sino1D.getGridOperator().softThresholding(sino1D, 0.01f);
+			sino1D.getGridOperator().divideBy(sino1D, sinoMean);
 			updGrid = backprojector.backprojectPixelDriven(sino1D, projIdx);
 			updGrid.getGridOperator().multiplyBy(updGrid, beta);
+//			if(projIdx < 45)
+//				updGrid.clone().show("upd");
 
 			recon.getGridOperator().addBy(recon, updGrid);
-
+//			if(projIdx > 130)
+//				recon.clone().show("recon");
 	
-			System.out.print(projIdx + " ");
+//			System.out.print(projIdx + " ");
 		}
 //		recon.clone().show("recon");
 		recon.getGridOperator().removeNegative(recon);
-//		applyFovMask(recon);
-		System.out.println(" ");
+		applyFovMask(recon);
+//		System.out.println(" ");
 	}
 	
-	private Grid2D extraSinogram(Grid2D sino)
-	{
-		Grid2D sino2 = new Grid2D(sino.getWidth() + extraNum * 2, sino.getHeight());
-		for(int i = 0; i < sino.getWidth(); i ++)
-			for(int j = 0; j < sino.getHeight(); j ++)
-				sino2.setAtIndex(i + extraNum, j, sino.getAtIndex(i, j));
-		
-		return sino2;
-	}
-	private void truncateProjDiff(Grid1D sino1D)
-	{
-		for(int i = 0; i < extraNum; i ++)
-		{
-			sino1D.setAtIndex(i, 0);
-			sino1D.setAtIndex(sino1D.getNumberOfElements() - i - 1, 0);
-		}
-	}
-	
-	private Grid2D paddingRecon(Grid2D recon)
-	{
-		Grid2D recon2 = new Grid2D(recon.getWidth() * 2, recon.getHeight() * 2);
-		for(int i = 0; i < recon.getWidth(); i ++)
-			for(int j = 0; j < recon.getHeight(); j++)
-			{
-				recon2.setAtIndex(i + recon.getWidth()/2, j + recon.getHeight()/2, recon.getAtIndex(i, j));
-			}
-		
-		return recon2;
-	}
-	
-	private Grid2D cropRecon(Grid2D recon)
-	{
-		Grid2D recon2 = new Grid2D(recon.getWidth() / 2, recon.getHeight() / 2);
-		for(int i = 0; i < recon2.getWidth(); i ++)
-			for(int j = 0; j < recon2.getHeight(); j++)
-			{
-				recon2.setAtIndex(i, j, recon.getAtIndex(i + recon2.getWidth()/2, j + recon2.getHeight()/2));
-			}
-		
-		return recon2;
-	}
 	
 	/**
 	 * weighted TV gradient descent part
@@ -316,34 +243,13 @@ public class IterativeReconForCell {
 	/**
 	 * compute the normalization weight for projection
 	 */
-//	private void getNormProj(){
-//		Grid2D phanC;
-//		if(isTruncated)
-//			phanC = new Grid2D(sizeX/s * 2, sizeY/s * 2);
-//		else
-//			phanC = new Grid2D(sizeX/s, sizeY/s);//Constant grid with all values as 1;
-//		phanC.setSpacing(spacingX * s, spacingY * s);
-//		phanC.getGridOperator().fill(phanC, 1.0f);
-//
-//		Grid1D normProj = projector.projectRayDriven1DCL(phanC, 0);
-//		sinoMean = normProj.getGridOperator().sum(normProj)/normProj.getNumberOfElements();
-//		System.out.println("sinoMean = " + sinoMean);
-//	}
-	
 	private void getNormProj(){
-		Grid2D phanC;
-		if(isTruncated)
-			phanC = new Grid2D(sizeX/s * 2, sizeY/s * 2);
-		else
-			phanC = new Grid2D(sizeX/s, sizeY/s);//Constant grid with all values as 1;
-		phanC.setSpacing(spacingX * s, spacingY * s);
+		Grid2D phanC = new Grid2D(sizeX, sizeY);//Constant grid with all values as 1;
+		phanC.setSpacing(spacingX, spacingY);
 		phanC.getGridOperator().fill(phanC, 1.0f);
 
-
-		normProj = projector.projectRayDrivenCL(phanC);
-		normProj.getGridOperator().addBy(normProj, 0.00001f);
-		normProj.clone().show("normProj");
-		sinoMean = normProj.getGridOperator().sum(normProj)/normProj.getNumberOfElements();
+		Grid1D sino = projector.projectRayDriven1DCL(phanC, 0);
+		sinoMean = sino.getGridOperator().sum(sino)/sino.getNumberOfElements();
 		System.out.println("sinoMean = " + sinoMean);
 	}
 
@@ -351,11 +257,7 @@ public class IterativeReconForCell {
 	 * compute normalization weight for backprojection
 	 */
 	private void getNormGrids(){
-		Grid1D sino1DC;
-		if(isTruncated)
-			sino1DC = new Grid1D(numDet + extraNum * 2);
-		else
-			sino1DC = new Grid1D(numDet);
+		Grid1D sino1DC = new Grid1D(numDet);
 		sino1DC.setSpacing(deltaS);
 		sino1DC.getGridOperator().fill(sino1DC, 1.0f);
 	
@@ -447,31 +349,4 @@ public class IterativeReconForCell {
 			}
 		}
 	}
-	
-	private void applyFovMask(Grid3D phan)
-	{
-		float r = (phan.getSize()[0] - 1.0f)/2.0f;
-		float rr = (r - 20)* (r - 20);
-		float xCent = r;
-		float yCent = xCent;
-		float dd;
-		for(int k = 0; k < phan.getSize()[2]; k++)
-			for(int i = 0; i < phan.getSize()[0]; i ++)
-				for(int j = 0; j < phan.getSize()[1]; j ++)
-				{
-					dd = (i - xCent) * (i - xCent) + (j - yCent) * (j - yCent);
-					if(dd > rr)
-						phan.setAtIndex(i, j,k,  0f);
-				}
-	}
-	
-	private void thresholding(Grid3D recon, float thres)
-	{
-		for(int i = 0; i < recon.getSize()[0]; i++)
-			for(int j = 0; j < recon.getSize()[1]; j++)
-				for(int k = 0; k < recon.getSize()[2]; k++)
-					if(recon.getAtIndex(i, j, k) < thres)
-						recon.setAtIndex(i, j, k, 0);
-	}
-
 }

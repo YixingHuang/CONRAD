@@ -43,8 +43,8 @@ public class CombineProjections {
 
 	private boolean isInitial = true;
 	private Grid3D reconUNet;
-	private String initialPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100DegreePwls\\SEUNet1IterPwls20190917.tif";
-	private String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100DegreePwls\\CombineProjections\\";
+	private String initialPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100Degree\\reconSEUNet500Epoch20190917.tif";
+	private String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FbpCellRecons100Degree\\CombineProjections\\";
 	
 	
 	public static void main (String [] args) throws Exception{
@@ -53,7 +53,7 @@ public class CombineProjections {
 		CombineProjections obj = new CombineProjections();
 		
 		String path =  "D:\\Tasks\\FAU4\\CellImaging\\";
-		ImagePlus imp0 =IJ.openImage(path+"projectionsPwls5Iter.tif");
+		ImagePlus imp0 =IJ.openImage(path+"projections.tif");
 		Grid3D proj0 = ImageUtil.wrapImagePlus(imp0);
 		proj0.show("projections");
 		
@@ -62,12 +62,8 @@ public class CombineProjections {
 		if(obj.isInitial)
 		{
 			obj.reconUNet = obj.read3DVolume(obj.initialPath);
-			obj.thresholding(obj.reconUNet, 0.19f);
-			obj.applyFovMask(obj.reconUNet);
-//			obj.reconUNet.getGridOperator().removeNegative(obj.reconUNet);
 		}
-		
-		obj.reconUNet.clone().show("reconUNet");
+
 		ImagePlus imp3D;
 		Grid2D sinoRaw;
 		sinoRaw = new Grid2D(obj.numDet, 180);
@@ -137,14 +133,7 @@ public class CombineProjections {
 		
 	}
 	
-	private void thresholding(Grid3D recon, float thres)
-	{
-		for(int i = 0; i < recon.getSize()[0]; i++)
-			for(int j = 0; j < recon.getSize()[1]; j++)
-				for(int k = 0; k < recon.getSize()[2]; k++)
-					if(recon.getAtIndex(i, j, k) < thres)
-						recon.setAtIndex(i, j, k, 0);
-	}
+	
 
 	
 	private Grid3D read3DVolume(String path)
@@ -183,22 +172,6 @@ public class CombineProjections {
 			
 	}
 	
-	private void applyFovMask(Grid3D phan)
-	{
-		float r = (phan.getSize()[0] - 1.0f)/2.0f;
-		float rr = r * r;
-		float xCent = r;
-		float yCent = xCent;
-		float dd;
-		for(int k = 0; k < phan.getSize()[2]; k++)
-			for(int i = 0; i < phan.getSize()[0]; i ++)
-				for(int j = 0; j < phan.getSize()[1]; j ++)
-				{
-					dd = (i - xCent) * (i - xCent) + (j - yCent) * (j - yCent);
-					if(dd > rr)
-						phan.setAtIndex(i, j,k,  0f);
-				}
-	}
 
 	private Grid2D combineProjections(Grid2D sinoRep, Grid2D sinoRaw) {
 		Grid2D sinoComb = new Grid2D(numDet, (int)(Math.PI/deltaTheta));

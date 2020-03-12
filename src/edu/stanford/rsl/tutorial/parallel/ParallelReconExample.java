@@ -30,14 +30,14 @@ public class ParallelReconExample {
 		phan.show("The Phantom");
 		
 		// Project forward parallel
-		ParallelProjector2D projector = new ParallelProjector2D(Math.PI, Math.PI/180.0, 768, 1);
+		ParallelProjector2D projector = new ParallelProjector2D(Math.PI, Math.PI/180.0, 400, 1);
 		Grid2D sinogram = projector.projectRayDrivenCL(phan);
 		sinogram.show("The Sinogram");
 		Grid2D filteredSinogram = new Grid2D(sinogram);
 		
 		
 		// Filter with RamLak
-		RamLakKernel ramLak = new RamLakKernel(sinogram.getSize()[0], 1);
+		RamLakKernel ramLak = new RamLakKernel(400, 1);
 		for (int theta = 0; theta < sinogram.getSize()[1]; ++theta) {
 			ramLak.applyToGrid(filteredSinogram.getSubGrid(theta));
 		}

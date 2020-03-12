@@ -1,4 +1,4 @@
-package edu.stanford.rsl.limitedangle;
+package edu.stanford.rsl.truncation;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -21,7 +21,7 @@ import edu.stanford.rsl.conrad.filtering.PoissonNoiseFilteringTool;
 import edu.stanford.rsl.conrad.filtering.redundancy.ParkerWeightingTool;
 import edu.stanford.rsl.tutorial.weightedtv.TVOpenCLGridOperators;
 
-public class GenerateConeBeamGroundTruthDataLimitedAngle {
+public class GenerateConeBeamGroundTruthDataDataTruncation {
 	public int factor = 2; //image size factor
 	protected int maxProjs;
 	public int imgSizeX;
@@ -49,7 +49,7 @@ public class GenerateConeBeamGroundTruthDataLimitedAngle {
 		String pathRecon = "C:\\Tasks\\FAU4\\LimitedAngle\\Noisy3D\\150Degree\\recon\\";
 		String savePath = "C:\\Tasks\\FAU4\\LimitedAngle\\Noisy3D\\150Degree\\projections\\";
 		String saveName1;
-		GenerateConeBeamGroundTruthDataLimitedAngle obj = new GenerateConeBeamGroundTruthDataLimitedAngle(); 
+		GenerateConeBeamGroundTruthDataDataTruncation obj = new GenerateConeBeamGroundTruthDataDataTruncation(); 
 		obj.initialGeometry();
 
 		

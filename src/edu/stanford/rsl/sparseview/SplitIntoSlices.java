@@ -19,8 +19,8 @@ public class SplitIntoSlices {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
-		String path = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\30Degree\\recon\\";
-		String path2 = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\30Degree\\trainingData_d10\\";
+		String path = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\recon\\";
+		String path2 = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\trainingData_d10\\";
 		String path3;
 		ImagePlus imp1, imp2;
 		String name1, name2, saveName1, saveName2;

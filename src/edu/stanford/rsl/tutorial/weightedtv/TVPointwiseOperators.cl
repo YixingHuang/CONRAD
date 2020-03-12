@@ -1564,24 +1564,3 @@ kernel void combineProjections(global float* gridProcessed, global float* gridPr
 	}
 }
 
-kernel void combineSparseProjections(global float* gridProcessed, global float* gridProj, const float scale, const int sizeX, const int sizeY, const int sizeZ)
-{
-
-	int x = get_global_id(0);
-	int y = get_global_id(1);
-	
-	
-	if((x >= sizeX) ||(y >= sizeY))
-	{
-		return;
-	}
-	int scale2 = (int) scale;
-	int idx, idx2;
-	for(int z = 0; z < sizeZ; z++)
-	{
-		idx = z * sizeX * sizeY + y * sizeX + x;
-		idx2 = scale2 * z * sizeX * sizeY + y * sizeX + x;
-		gridProcessed[idx2] = gridProj[idx];
-	}
-}
-

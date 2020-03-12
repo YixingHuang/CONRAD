@@ -25,7 +25,7 @@ public class ParallelRecon100DegreeWithNoiseForPhantomForTest {
 	public static void main (String [] args) throws Exception{
 		new ImageJ();
 		
-		String volumePath = "D:\\Tasks\\FAU4\\CellImaging\\AlgaePhantoms\\11.tif";
+		String volumePath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon\\AlgaePhantoms\\11.tif";
 		String imgPath, sinoPath;
 		String saveFolderPath = "D:\\Tasks\\FAU4\\CellImaging\\FOVRecon\\AlgaeTestPhantomNoise10e5\\";
 		String referenceFolderPath = saveFolderPath + "referenceRecons\\";
@@ -72,8 +72,7 @@ public class ParallelRecon100DegreeWithNoiseForPhantomForTest {
 		imp = IJ.openImage(volumePath);
 		Grid3D phan3D = ImageUtil.wrapImagePlus(imp);
 		int idSave;
-//		phan3D.getGridOperator().addBy(phan3D, 0.15f);
-//		phan3D.show();
+		
 		Grid3D recon3D = new Grid3D(sizeX/s, sizeY/s, phan3D.getSize()[2]/zs);
 		for(int imgIdx = 0; imgIdx < 512; imgIdx = imgIdx + zs )
 		{

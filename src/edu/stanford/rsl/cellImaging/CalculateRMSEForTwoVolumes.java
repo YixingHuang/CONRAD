@@ -34,7 +34,6 @@ public class CalculateRMSEForTwoVolumes {
 		String path2 = folderPath + "SEUNet.tif";
 		String path3 = folderPath + "reconFbp3DCombined.tif";
 		String path4 = folderPath + "reconFbp3DPwls2.tif";
-		String path5 = folderPath + "SEUNetPwls.tif";
 		String path6 = folderPath + "reconFbp3DCombinedPwls2.tif";
 
 		ImagePlus imp;
