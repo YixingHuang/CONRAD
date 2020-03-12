@@ -120,7 +120,7 @@ public class dbpOperators {
 		for(int i = 0; i < N; i++ )
 		{
 			s = ((i + 0.5) - N/2.0) * ds;
-			w = -1/Math.sqrt(R2 - s * s);
+			w = -1/(Math.sqrt(R2 - s * s) * Math.PI);
 			signal2.setAtIndex(i, (float) ((signal2.getAtIndex(i) + C)* w));
 		}
 

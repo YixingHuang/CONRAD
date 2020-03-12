@@ -16,11 +16,11 @@ import ij.ImageJ;
  * @author Yixing Huang
  *
  */
-public class ParallelReconExample2 {
+public class ParallelDbpReconExample {
 
 	public static void main (String [] args){
 		new ImageJ();
-		ParallelReconExample2 obj = new ParallelReconExample2();
+		ParallelDbpReconExample obj = new ParallelDbpReconExample();
 		
 		int x = 512;
 		int y = 512;
@@ -36,7 +36,7 @@ public class ParallelReconExample2 {
 		phan.show("The Phantom");
 		
 		// Project forward parallel
-		ParallelProjector2D projector = new ParallelProjector2D(2* Math.PI, Math.PI/180.0, 768, 1);
+		ParallelProjector2D projector = new ParallelProjector2D(2* Math.PI, Math.PI/180.0, 400, 1);
 		Grid2D sinogram = projector.projectRayDrivenCL(phan);
 		sinogram.show("The Sinogram");
 		Grid2D filteredSinogram = new Grid2D(sinogram);
