@@ -62,6 +62,7 @@ public class CombineProjections {
 		if(obj.isInitial)
 		{
 			obj.reconUNet = obj.read3DVolume(obj.initialPath);
+			obj.reconUNet.getGridOperator().removeNegative(obj.reconUNet);
 		}
 
 		ImagePlus imp3D;
