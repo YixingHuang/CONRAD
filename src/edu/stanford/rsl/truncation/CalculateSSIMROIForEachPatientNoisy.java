@@ -16,7 +16,7 @@ import edu.stanford.rsl.conrad.data.numeric.NumericPointwiseOperators;
 import edu.stanford.rsl.conrad.utils.DoubleArrayUtil;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
 
-public class CalculateSSIMForEachPatientNoisy {
+public class CalculateSSIMROIForEachPatientNoisy {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
@@ -55,11 +55,10 @@ public class CalculateSSIMForEachPatientNoisy {
 			imp1=IJ.openImage(nameWCE);
 			wce = ImageUtil.wrapImagePlus(imp1);
 			
-//			if(idx==3)
-//			{
+			
 //			imp1=IJ.openImage(nameFBP);
 //			fbp = ImageUtil.wrapImagePlus(imp1);
-//			}
+		
 			
 			imp1=IJ.openImage(nameWTV);
 			wtv = ImageUtil.wrapImagePlus(imp1);
@@ -131,7 +130,7 @@ public class CalculateSSIMForEachPatientNoisy {
 			sumWtv = sumWtv/(gt.getSize()[2] - 40);
 			sumUnet = sumUnet/(gt.getSize()[2] - 40);
 			sumDcr = sumDcr/(gt.getSize()[2] - 40);
-			System.out.println(sumFbp + " " + sumWce + " " + sumWtv + " " + sumUnet + " " + sumDcr);
+			System.out.println(idx + ": " + sumFbp + " " + sumWce + " " + sumWtv + " " + sumUnet + " " + sumDcr);
 		}
 		
 		
@@ -189,15 +188,36 @@ public class CalculateSSIMForEachPatientNoisy {
 //			}
 //	}
 	
+//	private static Grid2D keepFOV(Grid2D phan)
+//	{
+//		Grid2D phanCrop = new Grid2D(phan.getSize()[0], 190);
+//		for(int i = 0; i < phan.getSize()[0]; i ++)
+//			for(int j = 0; j < phanCrop.getSize()[1]; j ++)
+//			{
+//				phanCrop.setAtIndex(i, j, phan.getAtIndex(i, j));
+//			}
+//		
+//		return phanCrop;
+//	}
+	
 	private static Grid2D keepFOV(Grid2D phan)
 	{
-		Grid2D phanCrop = new Grid2D(phan.getSize()[0], 190);
-		for(int i = 0; i < phan.getSize()[0]; i ++)
-			for(int j = 0; j < phanCrop.getSize()[1]; j ++)
+		int thres = 97;
+		int thres2 = thres * thres;
+		int width = thres * 2 + 1;
+		Grid2D phanCrop = new Grid2D(width, width);
+		int xcent = phan.getSize()[0]/2;
+		for(int i = -thres; i <= thres; i ++)
+			for(int j = -thres; j <= thres; j ++)
 			{
-				phanCrop.setAtIndex(i, j, phan.getAtIndex(i, j));
+				if(i * i + j * j <= thres2)
+					phanCrop.setAtIndex(i + thres, j + thres, phan.getAtIndex(i + xcent, j + xcent));
+				else
+					phanCrop.setAtIndex(i + thres, j + thres, 0);
 			}
 		
 		return phanCrop;
 	}
+	
+	
 }

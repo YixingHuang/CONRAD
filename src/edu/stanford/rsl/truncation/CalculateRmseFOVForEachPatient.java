@@ -19,15 +19,10 @@ public class CalculateRmseFOVForEachPatient {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
-//		String path = "E:\\FAU4\\TruncationCorrection\\NoiseFree3D\\recon\\";
-//		String uNetPath = "E:\\FAU4\\TruncationCorrection\\NoiseFree3D\\UNetRecons\\";
-//		String wTvPath = "E:\\FAU4\\TruncationCorrection\\NoiseFree3D\\wTV\\";
-//		String DcrPath = "E:\\FAU4\\TruncationCorrection\\NoiseFree3D\\DCR\\";
-		
-		String path = "E:\\FAU4\\TruncationCorrection\\Noisy3D\\recon\\";
-		String uNetPath = "E:\\FAU4\\TruncationCorrection\\Noisy3D\\UNetRecons\\";
-		String wTvPath = "E:\\FAU4\\TruncationCorrection\\Noisy3D\\wTV\\";
-		String DcrPath = "E:\\FAU4\\TruncationCorrection\\Noisy3D\\DCR\\";
+		String path = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\recon\\";
+		String uNetPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\UNetRecons\\";
+		String wTvPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\wTV\\";
+		String DcrPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\DCR\\";
 
 		ImagePlus imp1;
 		String nameGT, nameWCE, nameFBP, nameUNet, nameWTV, nameDCR;
@@ -59,12 +54,12 @@ public class CalculateRmseFOVForEachPatient {
 			imp1=IJ.openImage(nameWCE);
 			wce = ImageUtil.wrapImagePlus(imp1);
 			
-			if(idx==3)
-			{
-			imp1=IJ.openImage(nameFBP);
-			fbp = ImageUtil.wrapImagePlus(imp1);
-			}
-			
+//			if(idx==3)
+//			{
+//			imp1=IJ.openImage(nameFBP);
+//			fbp = ImageUtil.wrapImagePlus(imp1);
+//			}
+//			
 			imp1=IJ.openImage(nameWTV);
 			wtv = ImageUtil.wrapImagePlus(imp1);
 			
@@ -93,12 +88,12 @@ public class CalculateRmseFOVForEachPatient {
 //			bw1 = new BufferedWriter(new FileWriter(outPutDir1));
 			for(int i = 20; i < gt.getSize()[2] - 20; i++) {
 				gt2d = (Grid2D) gt.getSubGrid(i).clone();
-				if(idx == 3)
-				{
-					fbp2d = (Grid2D) fbp.getSubGrid(i).clone();
-					rmseFbp = RMSE_FOV(fbp2d, gt2d);
-					
-				}
+//				if(idx == 3)
+//				{
+//					fbp2d = (Grid2D) fbp.getSubGrid(i).clone();
+//					rmseFbp = RMSE_FOV(fbp2d, gt2d);
+//					
+//				}
 				wce2d = (Grid2D) wce.getSubGrid(i).clone();
 				wtv2d = (Grid2D) wtv.getSubGrid(i).clone();
 				unet2d = (Grid2D) unet.getSubGrid(i).clone();
@@ -120,17 +115,17 @@ public class CalculateRmseFOVForEachPatient {
 //		
 //				bw1.write(rmse1 + "\r\n");
 //				bw1.flush();
-				if(idx == 3 && i == 174)
-					System.out.println(idx + " " + i + ":" + rmseFbp + " " + rmseWce + " " + rmseWtv + " " + rmseUnet + " " + rmseDcr);
-				
-				if(idx == 18 && i == 149)
-					System.out.println(idx + " " + i + ":" + rmseFbp + " " + rmseWce + " " + rmseWtv + " " + rmseUnet + " " + rmseDcr);
-				
-				if(idx == 2 && i == 186)
-					System.out.println(idx + " " + i + ":" + rmseFbp + " " + rmseWce + " " + rmseWtv + " " + rmseUnet + " " + rmseDcr);
-				
-				if(idx == 9 && i == 122)
-					System.out.println(idx + " " + i + ":" + rmseFbp + " " + rmseWce + " " + rmseWtv + " " + rmseUnet + " " + rmseDcr);
+//				if(idx == 3 && i == 174)
+//					System.out.println(idx + " " + i + ":" + rmseFbp + " " + rmseWce + " " + rmseWtv + " " + rmseUnet + " " + rmseDcr);
+//				
+//				if(idx == 18 && i == 149)
+//					System.out.println(idx + " " + i + ":" + rmseFbp + " " + rmseWce + " " + rmseWtv + " " + rmseUnet + " " + rmseDcr);
+//				
+//				if(idx == 2 && i == 186)
+//					System.out.println(idx + " " + i + ":" + rmseFbp + " " + rmseWce + " " + rmseWtv + " " + rmseUnet + " " + rmseDcr);
+//				
+//				if(idx == 9 && i == 122)
+//					System.out.println(idx + " " + i + ":" + rmseFbp + " " + rmseWce + " " + rmseWtv + " " + rmseUnet + " " + rmseDcr);
 				
 			}
 //			bw1.close();
