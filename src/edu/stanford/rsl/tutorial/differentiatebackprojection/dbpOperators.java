@@ -2,6 +2,7 @@ package edu.stanford.rsl.tutorial.differentiatebackprojection;
 
 import edu.stanford.rsl.conrad.data.numeric.Grid1D;
 import edu.stanford.rsl.conrad.data.numeric.Grid1DComplex;
+import edu.stanford.rsl.conrad.data.numeric.Grid2D;
 
 public class dbpOperators {
 	private float R = 0;
@@ -125,6 +126,43 @@ public class dbpOperators {
 		}
 
 		return signal2;
+	}
+	
+	public void weightedHilbertTranform2DVertical(Grid2D img)
+	{
+		Grid1D signal = new Grid1D(img.getSize()[1]);
+		Grid1D signal2;
+		for(int x = 0; x < img.getSize()[0]; x++)
+		{
+			for(int y = 0; y < img.getSize()[1]; y++)
+			{
+				signal.setAtIndex(y, img.getAtIndex(x, y));
+			}
+			signal2 = WeightedHilbertTransform(signal);
+			for(int y = 0; y < img.getSize()[1]; y++)
+			{
+				img.setAtIndex(x,y, signal2.getAtIndex(y));
+			}
+		}
+	}
+	
+	public Grid2D differentiatedProjection2D(Grid2D proj) {
+		Grid2D proj2 = new Grid2D(proj);
+		for(int i = 0; i < proj.getSize()[1]; i++)
+		{
+			proj2.setSubGrid(i, differentiatedProjection1D(proj2.getSubGrid(i)));
+		}
+		return proj2;
+	}
+	
+	
+	public Grid1D differentiatedProjection1D(Grid1D proj) {
+		Grid1D dproj = new Grid1D(proj.getNumberOfElements());
+		for(int i = 0; i < proj.getNumberOfElements()-1; i++)
+		{
+			dproj.setAtIndex(i, proj.getAtIndex(i + 1) - proj.getAtIndex(i));
+		}
+		return dproj;
 	}
 
 }
