@@ -84,15 +84,15 @@ public class dbpOperators {
 		double ds = signal.getSpacing()[0];
 		double R2 = R * R;
 		double w;
-//		System.out.print("R = " + R + ", R2 = " + R2);
+
 		for(int i = 0; i < N; i++ )
 		{
 			s = ((i + 0.5) - N/2.0) * ds;
 			w = Math.sqrt(R2 - s * s);
 			signal.setAtIndex(i, (float) (signal.getAtIndex(i) * w));
-//			System.out.print(w + " ");
+
 		}
-//		signal.clone().show("signal w");
+
 		
 		Grid1DComplex coeFourier = new Grid1DComplex (signal, false);
 		coeFourier.transformForward();
@@ -117,7 +117,22 @@ public class dbpOperators {
 		coeFourier.transformInverse();
 		Grid1D signal2 = coeFourier.getImagSubGrid(0, N);//get the imaginary part
 		
-		float C =  -signal2.getAtIndex(0);
+		float C;
+		int tag = 0;
+		if(tag == 0)
+			C =  -signal2.getAtIndex(0); //compute C with the known prior value 0
+		else
+		{
+			float sum = 0;
+			float sumw = 0;
+			for(int i = 0; i < 20; i++) {
+				s = ((i + 0.5) - N/2.0) * ds;
+				w = -1/(Math.sqrt(R2 - s * s) * Math.PI);
+				sum += signal2.getAtIndex(i) * w;
+				sumw += w;
+			}
+			C = - sum / sumw;
+		}
 		for(int i = 0; i < N; i++ )
 		{
 			s = ((i + 0.5) - N/2.0) * ds;

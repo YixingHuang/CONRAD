@@ -88,7 +88,9 @@ public class ConeBeamBackprojector {
 		originX = -geometry.getOriginX();
 		originY = -geometry.getOriginY();
 		originZ = -geometry.getOriginZ();
-		normalizer = (float) (geometry.getSourceToDetectorDistance()*geometry.getSourceToAxisDistance()*Math.PI / maxProjs);
+//		normalizer = (float) (geometry.getSourceToDetectorDistance()*geometry.getSourceToAxisDistance()*Math.PI / maxProjs);
+		normalizer = (float) (2 * Math.PI / maxProjs);
+		System.out.println("normalizer = " + normalizer + ", SDD = " + geometry.getSourceToDetectorDistance() + ", SID = " + geometry.getSourceToAxisDistance());
 	}
 	
 	private void initCL(){

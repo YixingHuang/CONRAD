@@ -1,4 +1,4 @@
-package edu.stanford.rsl.tutorial.differentiatebackprojection;
+package edu.stanford.rsl.Yixing.sparseview;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -20,10 +20,8 @@ import edu.stanford.rsl.tutorial.cone.ConeBeamProjector;
 import edu.stanford.rsl.conrad.filtering.PoissonNoiseFilteringTool;
 import edu.stanford.rsl.conrad.filtering.redundancy.ParkerWeightingTool;
 import edu.stanford.rsl.tutorial.weightedtv.TVOpenCLGridOperators;
-import edu.stanford.rsl.conrad.geometry.Projection;
-import edu.stanford.rsl.conrad.numerics.SimpleVector;
 
-public class ConeBeamReconExample {
+public class GenerateConeBeamGroundTruthDataSparseView {
 	public int factor = 2; //image size factor
 	protected int maxProjs;
 	public int imgSizeX;
@@ -39,8 +37,8 @@ public class ConeBeamReconExample {
 	protected double originY;
 	protected double originZ;
 	public ConeBeamProjector cbp;
-	public ConeBeamBackprojector cbbp, cbbp2;
-	 private dbpOperators dbpOp;
+	public ConeBeamBackprojector cbbp;
+	
 	public OpenCLGrid3D sinoCL, volCL, reconCL, artifactCL;
 	public Grid3D sinogram;
 	
@@ -51,64 +49,62 @@ public class ConeBeamReconExample {
 		String pathRecon = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\recon\\";
 		String savePath = "D:\\Tasks\\FAU4\\SparseViewCT\\Noisy3D\\projections\\";
 		String saveName1;
-		ConeBeamReconExample obj = new ConeBeamReconExample(); 
+		GenerateConeBeamGroundTruthDataSparseView obj = new GenerateConeBeamGroundTruthDataSparseView(); 
 		obj.initialGeometry();
-		obj.dbpOp = new dbpOperators(obj.imgSizeX, obj.imgSizeY, obj.spacingX, obj.spacingY);
+		OpenCLGrid3D recon_no_leison;
+		
+		//Grid3D img = obj.getOriginalGroundTruthData(path, 7);
+		//img.clone().show("img");
+		
+		ImagePlus imp1, imp2;
+		boolean isTumor = false;
+		boolean isNoisy = true;
+		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
+		
+		Grid2D tempSino;
+		for(int i = 1; i <= 12; i++){
+		//int i = 1;
+			obj.cbp=new ConeBeamProjector();
+			obj.cbbp=new ConeBeamBackprojector();
+			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i, isTumor));
+			obj.rescaleData(obj.volCL);
+			recon_no_leison = new OpenCLGrid3D(obj.volCL);
+			//obj.addTumors(obj.volCL);
+			//obj.volCL.clone().show("volCL");
+			obj.volCL.setSpacing(1.25, 1.25, 1);
+			obj.volCL.setOrigin(obj.geo.getOriginX(), obj.geo.getOriginY(), obj.geo.getOriginZ());
+			
+			obj.getMeasuredSinoCL();
 
-//		ImagePlus imp1, imp2;
-//		boolean isTumor = false;
-//		boolean isNoisy = false;
-//		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
-//		Grid3D phan = new NumericalSheppLogan3D(obj.imgSizeX, obj.imgSizeY, obj.imgSizeZ).getNumericalSheppLoganPhantom();
-//		Grid2D tempSino;
-//		for(int i = 1; i <= 1; i++){
-//		//int i = 1;
-//			obj.cbp=new ConeBeamProjector();
-//			obj.cbbp=new ConeBeamBackprojector();
-//			obj.cbbp2=new ConeBeamBackprojector();
-//			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i, isTumor));
-//			obj.rescaleData(obj.volCL);
-//			obj.volCL.clone().show();
-////			obj.volCL = new OpenCLGrid3D(phan);
-//			obj.volCL.setSpacing(1.25, 1.25, 1);
-//			obj.volCL.setOrigin(obj.geo.getOriginX(), obj.geo.getOriginY(), obj.geo.getOriginZ());
-//			
-//			obj.getMeasuredSinoCL();
-//
-//			obj.sinogram = new Grid3D(obj.sinoCL);
-//			obj.sinoCL.release();
-////			for(int theta = 0; theta < obj.maxProjs; theta ++)
-////			{
-////				obj.sinogram.setSubGrid(theta, dbpOp.differentiatedProjection2D(obj.sinogram.getSubGrid(theta)));
-////			}
-//			//obj.sinogram.clone().show("sinogram");
-//		    
-//			if(isNoisy)
-//				obj.addPoissonNoise3D(obj.sinogram);
-//			
-////			imp1 = ImageUtil.wrapGrid(obj.sinogram, null);
-////			saveName1 = savePath + "projection" +i + ".tif";
-////		    IJ.saveAs(imp1, "Tiff", saveName1);
-////			obj.FDKReconstruction((Grid3D)obj.sinogram.clone());
-//			
-//			obj.DBPReconstruction((Grid3D)obj.sinogram.clone());
-//			
-//			obj.reconCL.show("reconCL");
-////			obj.artifactCL = new OpenCLGrid3D(obj.reconCL);
-////			obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, obj.volCL);
-////			obj.volCL.getGridOperator().divideBy(obj.volCL, 0.07f);
-////			obj.reconCL.getGridOperator().divideBy(obj.reconCL, 0.07f);
-////			obj.artifactCL.getGridOperator().divideBy(obj.artifactCL, 0.07f);
-////			obj.saveTrainingData(pathRecon, obj.volCL, obj.reconCL, obj.artifactCL, i);
-//			//obj.saveFullReconData(pathRecon, obj.reconCL, i);
-//			
-//			obj.volCL.release();
-//			obj.reconCL.release();
-////			obj.artifactCL.release();
-//			
-//			System.out.println(i);
-//			
-//		}
+			obj.sinogram = new Grid3D(obj.sinoCL);
+			obj.sinoCL.release();
+			
+
+			//obj.sinogram.clone().show("sinogram");
+		    
+			if(isNoisy)
+				obj.addPoissonNoise3D(obj.sinogram);
+			
+			imp1 = ImageUtil.wrapGrid(obj.sinogram, null);
+			saveName1 = savePath + "projection" +i + ".tif";
+		    IJ.saveAs(imp1, "Tiff", saveName1);
+			
+			obj.FDKReconstruction(obj.sinogram);
+			obj.artifactCL = new OpenCLGrid3D(obj.reconCL);
+			//obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, obj.volCL);
+			obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, recon_no_leison);
+			obj.volCL.getGridOperator().divideBy(obj.volCL, 0.07f);
+			obj.reconCL.getGridOperator().divideBy(obj.reconCL, 0.07f);
+			obj.artifactCL.getGridOperator().divideBy(obj.artifactCL, 0.07f);
+			obj.saveTrainingData(pathRecon, obj.volCL, obj.reconCL, obj.artifactCL, i);
+			//obj.saveFullReconData(pathRecon, obj.reconCL, i);
+			obj.volCL.release();
+			obj.reconCL.release();
+			obj.artifactCL.release();
+			
+			System.out.println(i);
+			
+		}
     }
 	
 	private void addTumors(Grid3D gtImages){
@@ -181,18 +177,7 @@ public class ConeBeamReconExample {
 		geo = conf.getGeometry();
 		width = geo.getDetectorWidth();
 		height = geo.getDetectorHeight();
-		double[] prim = geo.getPrimaryAngles();
-		Projection[] pms = geo.getProjectionMatrices();
-		double angle;
-		SimpleVector vec;
-		for(int i = 0; i < prim.length; i++)
-		{
-			vec = pms[i].computePrincipalAxis();
-			angle = Math.atan(vec.getElement(0)/vec.getElement(1)) * 180.0 / Math.PI;
-			System.out.println(i + ": " + prim[i] + " " + vec.toString() + " " + angle);
-			
-		}
-		System.out.println();
+		
 		// create context
 		maxProjs = geo.getProjectionStackSize();
 		imgSizeX = geo.getReconDimensionX();
@@ -212,83 +197,33 @@ public class ConeBeamReconExample {
 		double deltaU = geo.getPixelDimensionX();
 		double deltaV = geo.getPixelDimensionY();
 		int numProjs = geo.getNumProjectionMatrices();	
+		Grid3D sinogram2=new Grid3D(sinogram.getSize()[0],sinogram.getSize()[1], numProjs);
 		ConeBeamCosineFilter cbFilter = new ConeBeamCosineFilter(focalLength, width, height, deltaU, deltaV);
 		RamLakKernel ramK = new RamLakKernel(width, deltaU);
-		ParkerWeightingTool parker = new ParkerWeightingTool(geo);
+		//ParkerWeightingTool parker = new ParkerWeightingTool(geo);
 		for (int i = 0; i < numProjs; ++i) 
 			
 		{
-			parker.setImageIndex(i);
-//			sinogram2.setSubGrid(i, (Grid2D)parker.applyToolToImage(sinogram.getSubGrid(i)).clone());
-			parker.applyToolToImage(sinogram.getSubGrid(i));
-			cbFilter.applyToGrid(sinogram.getSubGrid(i));
+			//parker.setImageIndex(i);
+			//parker.applyToolToImage(sinogram2.getSubGrid(i));
+		
+			sinogram2.setSubGrid(i, (Grid2D) sinogram.getSubGrid(i).clone());
+			cbFilter.applyToGrid(sinogram2.getSubGrid(i));
 			//ramp
 			for (int j = 0;j <height; ++j)
-				ramK.applyToGrid(sinogram.getSubGrid(i).getSubGrid(j));
+				ramK.applyToGrid(sinogram2.getSubGrid(i).getSubGrid(j));
 			System.out.print(i + " ");
 		}
 		System.out.println(" ");
 		
-
-		Grid3D reconFDK = cbbp.backprojectPixelDrivenCL(sinogram);
-		reconFDK.clone().show("FDK");
-//		reconCL= new OpenCLGrid3D(reconFDK);
+		Grid3D reconFDK = cbbp.backprojectPixelDrivenCL(sinogram2);
+		reconCL= new OpenCLGrid3D(reconFDK);
 
 		//float scalCorrection = (float)( 260/(34.5*720000));
 		//reconCL.getGridOperator().multiplyBy(reconCL, scalCorrection);
 		//reconFDK = new Grid3D(reconCL);
 		//reconFDK.show("FDK reconstruction");	
 		
-	}
-	
-	public void DBPReconstruction(Grid3D sinogram){
-		double focalLength = geo.getSourceToDetectorDistance();
-		double deltaU = geo.getPixelDimensionX();
-		double deltaV = geo.getPixelDimensionY();
-		int numProjs = geo.getNumProjectionMatrices();	
-
-		ConeBeamCosineFilter cbFilter = new ConeBeamCosineFilter(focalLength, width, height, deltaU, deltaV);
-
-		ParkerWeightingTool parker = new ParkerWeightingTool(geo);
-		for (int i = 0; i < numProjs; ++i) 
-		{
-			cbFilter.applyToGrid(sinogram.getSubGrid(i));
-			sinogram.setSubGrid(i, dbpOp.differentiatedProjection2D(sinogram.getSubGrid(i)));
-			parker.setImageIndex(i);
-			parker.applyToolToImage(sinogram.getSubGrid(i));
-
-			
-			System.out.print(i + " ");
-		}
-		System.out.println(" ");
-		
-
-		Grid3D reconFDK = cbbp2.backprojectPixelDrivenCL(sinogram);
-		reconFDK.clone().show("DBP0");
-		Grid2D recon2D;
-//		for(int z = 0; z < reconFDK.getSize()[2]; z++)
-//		{
-//			recon2D = reconFDK.getSubGrid(z);
-//			for(int i = 0; i < reconFDK.getSize()[1]; i ++)
-//			{
-//				recon2D.setSubGrid(i, dbpOp.WeightedHilbertTransform(recon2D.getSubGrid(i)));
-//			}
-//			recon2D.getGridOperator().multiplyBy(recon2D, -1);
-//		}
-		
-		for(int z = 0; z < reconFDK.getSize()[2]; z++)
-		{
-			recon2D = reconFDK.getSubGrid(z);
-//			for(int i = 0; i < reconFDK.getSize()[1]; i ++)
-//			{
-//				recon2D.setSubGrid(i, dbpOp.WeightedHilbertTransform(recon2D.getSubGrid(i)));
-//			}
-			dbpOp.weightedHilbertTranform2DVertical(recon2D);
-			recon2D.getGridOperator().multiplyBy(recon2D, -1);
-		}
-		
-		reconCL= new OpenCLGrid3D(reconFDK);
-
 	}
 	
 	public void getMeasuredSinoCL() throws Exception {
