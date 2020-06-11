@@ -13,21 +13,51 @@ import java.io.IOException;
 import edu.stanford.rsl.conrad.data.numeric.Grid2D;
 import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 import edu.stanford.rsl.conrad.data.numeric.NumericPointwiseOperators;
+import edu.stanford.rsl.conrad.data.numeric.opencl.OpenCLGrid2D;
+import edu.stanford.rsl.conrad.data.numeric.opencl.OpenCLGrid3D;
+import edu.stanford.rsl.conrad.geometry.Projection;
+import edu.stanford.rsl.conrad.geometry.trajectories.Trajectory;
+import edu.stanford.rsl.conrad.utils.Configuration;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
+import edu.stanford.rsl.tutorial.cone.ConeBeamBackprojector;
+import edu.stanford.rsl.tutorial.cone.ConeBeamProjector;
 
-public class GenerateCelphaloFromCT {
-	public static void main(String[] args) throws IOException{
+public class GenerateCelphaloFromCTPerspectiveProjection {
+	protected int maxProjs;
+	public int imgSizeX;
+	public int imgSizeY;
+	public int imgSizeZ;
+	protected Trajectory geo = null;
+	protected int width;
+	protected int height;
+	protected double spacingX;
+	protected double spacingY;
+	protected double spacingZ;
+	protected double detSpacingX, detSpacingY;
+	protected double originX;
+	protected double originY;
+	protected double originZ;
+	public ConeBeamProjector cbp;
+//	public ConeBeamBackprojector cbbp;
+	
+	public OpenCLGrid3D sinoCL, volCL;
+	public OpenCLGrid2D sinoCL2D;
+	public Grid3D sinogram;
+	
+	public static void main(String[] args) throws Exception{
 		new ImageJ();
 		double [] spacingAll = new double[]{0.4883,0.4883,0.6250, 
 				0.5469, 0.5469,0.6250, 
 				0.4883, 0.4883, 0.6250, 
 				0.4707, 0.4707, 0.6250, 
 				0.4980, 0.4980, 0.6250};
-		GenerateCelphaloFromCT obj = new GenerateCelphaloFromCT();
+		GenerateCelphaloFromCTPerspectiveProjection obj = new GenerateCelphaloFromCTPerspectiveProjection();
 		String inputPath = "E:\\CQ500CTData\\completeHeadData\\";
 		String outputPath = inputPath;
 		String name;
 		float s = 0.00002f;
+		obj.initialGeometry();
+		obj.cbp=new ConeBeamProjector();
 
 		for(int idx = 0; idx <= 0; idx++) {
 			name = inputPath + idx + "p2.tif";
@@ -47,16 +77,21 @@ public class GenerateCelphaloFromCT {
 			bone.getGridOperator().multiplyBy(bone, s);
 			soft.getGridOperator().multiplyBy(soft, s);
 //			vol.show("vol");
-			
-			Grid2D p = obj.projection(vol);
+			obj.volCL = new OpenCLGrid3D(vol);
+			obj.getPerspectiveProjection();
+//			Grid2D p = new Grid2D(obj.sinoCL.getSubGrid(0));
+//			obj.sinoCL.release();
+			Grid2D p = new Grid2D(obj.sinoCL2D);
+			obj.sinoCL2D.release();
+			obj.volCL.release();
+			p.setSpacing(obj.detSpacingX, obj.detSpacingY);
+			p.setOrigin(-(p.getSize()[0] - 1.0) * p.getSpacing()[0]/2.0, -(p.getSize()[1] - 1.0) * p.getSpacing()[1]/2.0);
+
 			Grid2D p2 = obj.fliplrud(p);
 //			p2.getGridOperator().removeNegative(p2);
 			p2.show("projection" + idx);
 			
-			Grid2D celp = new Grid2D(512, 512);
-			celp.setSpacing(0.5, 0.5);
-			celp.setOrigin(-(celp.getSize()[0] - 1.0) * celp.getSpacing()[0]/2.0, -(celp.getSize()[1] - 1.0) * celp.getSpacing()[1]/2.0);
-			obj.resampleCelp(celp, p2);
+			Grid2D celp = p2;
 			Grid2D mask = obj.getBackgroundMask(celp, 0.08f);
 			celp.clone().show("celp" + idx);
 			Grid2D celp2 = obj.sigmoidTransform2(celp, 2.68f, 1);
@@ -70,35 +105,20 @@ public class GenerateCelphaloFromCT {
 //			imp = ImageUtil.wrapGrid(celp, null);
 //			name = outputPath + "celp" + idx + ".tif";
 //		    IJ.saveAs(imp, "Tiff", name);
-			
-			Grid2D pBone = obj.projection(bone);
-			Grid2D pBone2 = obj.fliplrud(pBone);
-			pBone2.show("projection bone" + idx);
-			
-			Grid2D celpBone = new Grid2D(512, 512);
-			celpBone.setSpacing(0.5, 0.5);
-			celpBone.setOrigin(-(celp.getSize()[0] - 1.0) * celp.getSpacing()[0]/2.0, -(celp.getSize()[1] - 1.0) * celp.getSpacing()[1]/2.0);
-			obj.resampleCelp(celpBone, pBone2);
-			celpBone.clone().show("celpBone");
-			
-			Grid2D pSoft = obj.projection(soft);
-			Grid2D pSoft2 = obj.fliplrud(pSoft);
-			pSoft2.show("projection soft" + idx);
-			
-			Grid2D celpSoft = new Grid2D(512, 512);
-			celpSoft.setSpacing(0.5, 0.5);
-			celpSoft.setOrigin(-(celp.getSize()[0] - 1.0) * celp.getSpacing()[0]/2.0, -(celp.getSize()[1] - 1.0) * celp.getSpacing()[1]/2.0);
-			obj.resampleCelp(celpSoft, pSoft2);
-			celpSoft.clone().show("celpSoft");
-			
+						
 			vol = obj.combineBoneAndSoft(bone, soft, 1.4f);
-			Grid2D pCombine = obj.projection(vol);
+			obj.volCL = new OpenCLGrid3D(vol);
+//			Grid2D pCombine = obj.projection(vol);
+			obj.getPerspectiveProjection();
+			Grid2D pCombine = new Grid2D(obj.sinoCL2D);
+			obj.sinoCL2D.release();
+			obj.volCL.release();
+			pCombine.setSpacing(obj.detSpacingX, obj.detSpacingY);
+			pCombine.setOrigin(-(p.getSize()[0] - 1.0) * p.getSpacing()[0]/2.0, -(p.getSize()[1] - 1.0) * p.getSpacing()[1]/2.0);
 			Grid2D pCombine2 = obj.fliplrud(pCombine);
 			pCombine2.show("projection combine" + idx);
-			Grid2D celpCombine = new Grid2D(512, 512);
-			celpCombine.setSpacing(0.5, 0.5);
-			celpCombine.setOrigin(-(celp.getSize()[0] - 1.0) * celp.getSpacing()[0]/2.0, -(celp.getSize()[1] - 1.0) * celp.getSpacing()[1]/2.0);
-			obj.resampleCelp(celpCombine, pCombine2);
+
+			Grid2D celpCombine = pCombine2;
 			celpCombine.clone().show("celp combine");
 			//celpCombine.getGridOperator().divideBy(celpCombine, 1.1f);
 			Grid2D celpCombine3 = obj.sigmoidTransform2(celpCombine, 3.f, 1.5f);
@@ -107,14 +127,12 @@ public class GenerateCelphaloFromCT {
 			celpCombine3.clone().show("afterMask2" + idx);
 			
 			Grid2D gradient = obj.computeGradient(mask, 0.5f);
-			gradient.clone().show("original gradient");
-			for(int i = 444; i <= 452; i++)
-				for(int j = 183; j <=188; j++)
+			for(int i = 444; i < 447; i++)
+				for(int j = 185; j <=187; j++)
 					gradient.setAtIndex(i, j, 0);
-			
-			for(int i = 55; i <=63; i++)
-				for(int j = 434; j <= 454; j++)
-					gradient.setAtIndex(i, j, 0);
+			gradient.setAtIndex(447, 211, 0);
+			gradient.setAtIndex(446, 211, 0);
+			gradient.setAtIndex(446, 212, 0);
 			gradient.show("gradient");
 			Grid3D celpRGB = new Grid3D(celpCombine3.getWidth(), celpCombine3.getHeight(), 3);
 			for(int i = 0; i < 3; i++)
@@ -129,8 +147,6 @@ public class GenerateCelphaloFromCT {
 					}
 				}
 			celpRGB.clone().show("RGB");
-			
-			
 		    System.out.print(idx + " ");
 		}
 
@@ -158,6 +174,45 @@ public class GenerateCelphaloFromCT {
 			}
 		return gradient;
 	}
+	
+	public void initialGeometry() throws Exception {
+		Configuration.loadConfiguration();
+		Configuration conf = Configuration.getGlobalConfiguration();
+		geo = conf.getGeometry();
+		width = geo.getDetectorWidth();
+		height = geo.getDetectorHeight();
+		
+		// create context
+		maxProjs = geo.getProjectionStackSize();
+		imgSizeX = geo.getReconDimensionX();
+		imgSizeY = geo.getReconDimensionY();
+		imgSizeZ = geo.getReconDimensionZ();
+		spacingX = geo.getVoxelSpacingX();
+		spacingY = geo.getVoxelSpacingY();
+		spacingZ = geo.getVoxelSpacingZ();
+		originX = geo.getOriginX();
+		originY = geo.getOriginY();
+		originZ = geo.getOriginZ();
+		detSpacingX = geo.getPixelDimensionX();
+		detSpacingY = geo.getPixelDimensionY();
+		System.out.println(detSpacingX + " " + detSpacingY);
+		System.out.println(spacingX+ " " + spacingY + " " + spacingZ);
+		System.out.println(originX+ " " + originY + " " + originZ);
+		System.out.println(geo.getDetectorOffsetU()+ " " + geo.getDetectorOffsetV());
+	}
+	
+	public void getPerspectiveProjection() throws Exception {
+//		sinoCL = new OpenCLGrid3D(new Grid3D(width, height, maxProjs));
+//		sinoCL.getDelegate().prepareForDeviceOperation();
+//		cbp.fastProjectRayDrivenCL(sinoCL, volCL);
+		//sinoCL.show("sinoCL");
+		volCL.getDelegate().prepareForDeviceOperation();
+		sinoCL2D = new OpenCLGrid2D(new Grid2D(width, height));
+		sinoCL2D.getDelegate().prepareForDeviceOperation();
+		cbp.projectRayDrivenCL2(sinoCL2D, volCL, 0);
+		sinoCL2D.getDelegate().notifyDeviceChange();;
+	}
+	
 	
 	public void segmentRegions(Grid3D img, Grid3D bone, Grid3D soft, Grid3D air, float thresBone, float thresAir)
 	{

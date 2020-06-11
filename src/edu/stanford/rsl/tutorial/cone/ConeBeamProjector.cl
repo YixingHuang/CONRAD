@@ -20,7 +20,7 @@ float8 CohenSutherlandLineClip3D(
 	float xmax, float ymax, float zmax);
 
 __constant float samplingRate = 3.0f;
-__constant sampler_t linearSampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_LINEAR;
+__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_LINEAR;
 
 inline void AtomicAdd(volatile __global float *source, const float operand) {
     union {
@@ -38,11 +38,8 @@ inline void AtomicAdd(volatile __global float *source, const float operand) {
 }
 
 kernel void projectRayDrivenCL(
-	image3d_t grid,
+	__read_only image3d_t grid,
 	global float* sino, 
-	//global float* pmatrix
-	/* not yet... float2 gridSpacing, */
-	int p,
 	int imgSizeX,
 	int imgSizeY,
 	int imgSizeZ,
@@ -60,7 +57,6 @@ kernel void projectRayDrivenCL(
 	float sourcePosY,
 	float sourcePosZ,
 	float pdx, float pdy, float pdz
-	//float vx, float vy, float vz
 	) {
 	const unsigned int u = get_global_id(0);// u index
 	const unsigned int v = get_global_id(1);// v index
@@ -79,19 +75,22 @@ kernel void projectRayDrivenCL(
 	const float4 dirV = {0.f, 0.f, 1.f, 0.f};
 	float4 dirU = cross(dirV, -principalAxis);
 	//dirU = dirU / length(dirU);
-	float4 detPos = (u-maxU/2.f) * dirU*spacingUV.x  + (v-maxV/2.f)*dirV*spacingUV.y;
+	float4 detPos = (u-maxU/2.f+0.5f) * dirU*spacingUV.x  + (v-maxV/2.f+0.5f)*dirV*spacingUV.y;
 	
 	float4 dirSourceDetector = detPos - posSource;
 	detPos = detPos + dirSourceDetector;//extend ray
 if (true) { // activate clipping?
 	//compute intersection between ray and object
-	float xmin = - imgSizeX_MM / 2.f;
-	float ymin = - imgSizeY_MM / 2.f;
-	float zmin = - imgSizeZ_MM / 2.f;
-	float xmax = imgSizeX_MM -1 - imgSizeX_MM / 2.f;
-	float ymax = imgSizeY_MM -1 - imgSizeY_MM / 2.f;
-	float zmax = imgSizeZ_MM -1 - imgSizeZ_MM / 2.f;
-
+	float xmin = - (imgSizeX_MM - spacingX) / 2.f;
+	float ymin = - (imgSizeY_MM - spacingY) / 2.f;
+	float zmin = - (imgSizeZ_MM - spacingZ)/ 2.f;
+//	float xmax = imgSizeX_MM - spacingX - imgSizeX_MM / 2.f;
+//	float ymax = imgSizeY_MM - spacingY - imgSizeY_MM / 2.f;
+//	float zmax = imgSizeZ_MM - spacingZ - imgSizeZ_MM / 2.f;
+	float xmax = -xmin;
+	float ymax = -ymin;
+	float zmax = -zmin;
+	
 	float8 intersectionPoints = CohenSutherlandLineClip3D(posSource.x, posSource.y, posSource.z, detPos.x, detPos.y, detPos.z, xmin, ymin, zmin, xmax, ymax, zmax);
 	if (isnan(intersectionPoints.x)) {
 		const unsigned int idx = u + v*maxU;
@@ -116,12 +115,11 @@ if (true) { // activate clipping?
 	// compute the integral along the line.
 	for (float tLine = 0.f; tLine < distance * samplingRate; tLine += 1.f) {
 		float4 current = (posSource + originXYZ + tLine * dirSourceDetector) / spacingXYZ + 0.5f;
-		sum += read_imagef(grid, linearSampler, current).x;
+		sum += read_imagef(grid, sampler, current).x;
 	}
-
+		
 	// normalize by the number of interpolation points
 	sum /= samplingRate;
-	
 	//write to sinogram
 	const unsigned int idx = u + v*maxU;
 	sino[idx] = sum;

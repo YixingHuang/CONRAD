@@ -10,37 +10,37 @@ public class ErosionDilationOperators {
 		
 		Grid2D erodedVersion = new Grid2D(img.getWidth(), img.getHeight());
 
-		for(int i = 0; i < erodedVersion.getHeight(); ++i){
-			for(int j = 0; j < erodedVersion.getWidth(); ++j){
-				erodedVersion.setAtIndex(j, i, 1.0f);
+		for(int i = 0; i < erodedVersion.getWidth(); ++i){
+			for(int j = 0; j < erodedVersion.getHeight(); ++j){
+				erodedVersion.setAtIndex(i, j, 1.0f);
 			}
 		}
 
-		for(int i = 0; i < img.getHeight(); ++i){
-			for(int j = 0; j < img.getWidth(); ++j){
+		for(int i = 0; i < img.getWidth(); ++i){
+			for(int j = 0; j < img.getHeight(); ++j){
 				ArrayList<Float> myList = new ArrayList<Float>();
 				for(int k = 1; k < diameter/2; ++k){
-					if(j-k < 0 || j+k >= img.getWidth()){
+					if(i-k < 0 || i+k >= img.getWidth()){
 
 					}else{
-						myList.add(img.getAtIndex(j-k, i));
-						myList.add(img.getAtIndex(j+k, i));
+						myList.add(img.getAtIndex(i-k, j));
+						myList.add(img.getAtIndex(i+k, j));
 					}
 					float checker = 0;
 					for(Float flag:myList){
 						checker += (flag != null ? flag:Float.NaN);
 					}
 					if(checker == 0.0){
-						erodedVersion.setAtIndex(j, i, 0.0f);
+						erodedVersion.setAtIndex(i, j, 0.0f);
 					}else{
-						erodedVersion.setAtIndex(j, i, 1.0f);
+						erodedVersion.setAtIndex(i, j, 1.0f);
 					}
 				}
 			}
 		}
-		for(int i = 0; i < img.getHeight(); ++i){
-			for(int j = 0; j < img.getWidth(); ++j){
-				img.setAtIndex(j, i, erodedVersion.getAtIndex(j, i));
+		for(int i = 0; i < img.getWidth(); ++i){
+			for(int j = 0; j < img.getHeight(); ++j){
+				img.setAtIndex(i, j, erodedVersion.getAtIndex(i, j));
 			}
 		}
 	}

@@ -8,6 +8,7 @@ import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
+import com.jogamp.opencl.CLImage2d;
 import com.jogamp.opencl.CLImage3d;
 import com.jogamp.opencl.CLImageFormat;
 import com.jogamp.opencl.CLKernel;
@@ -61,6 +62,9 @@ public class ConeBeamProjector {
 	private int width;
 	private int height;
 	protected Trajectory geometry;
+	private int maxProjs;
+	private Projection[] projMats;
+	private CLBuffer<FloatBuffer> projMatrices;
 	private int currentStep = 0;
 	private float [] voxelSize = null;
 	private float [] volumeSize = null;
@@ -71,7 +75,7 @@ public class ConeBeamProjector {
 
 	public ConeBeamProjector() {
 		configure();
-		initCL();
+		initCL2();
 	}
 	
 	private void initCL(){
@@ -111,6 +115,115 @@ public class ConeBeamProjector {
 		.putWriteBuffer(gVolumeEdgeMaxPoint, true)
 		.finish();
 		
+	}
+	
+	/**
+	 * Using the ConeBeamProjector.cl
+	 */
+	private void initCL2(){
+		context = OpenCLUtil.getStaticContext();
+		device = context.getMaxFlopsDevice();
+		
+
+		// load sources, create and build program
+		program = null;
+		if (program==null || !program.getContext().equals(context)){
+			try {
+				program = context.createProgram(this.getClass().getResourceAsStream("ConeBeamProjector.cl")).build();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		// create image from input grid
+		format = new CLImageFormat(ChannelOrder.INTENSITY, ChannelType.FLOAT);
+		
+		localWorkSize = Math.min(device.getMaxWorkGroupSize(), 16);
+		globalWorkSizeU = OpenCLUtil.roundUp(localWorkSize, width); 
+		globalWorkSizeV = OpenCLUtil.roundUp(localWorkSize, height); 
+		
+		queue = device.createCommandQueue();
+		kernelFunction =  program.createCLKernel("projectRayDrivenCL");
+//		projMatrices = context.createFloatBuffer(maxProjs*3*4, Mem.READ_ONLY);
+//		for(int p = 0; p < maxProjs; p++) {
+//			for(int row = 0; row < 3; row++) {
+//				for(int col = 0; col < 4; col++) {
+//					projMatrices.getBuffer().put((float)projMats[p].computeP().getElement(row, col));
+//				}
+//			}
+//		}
+//		projMatrices.getBuffer().rewind();
+//		queue.putWriteBuffer(projMatrices, true).finish();
+		
+	}
+	
+	public void projectRayDrivenCL2(OpenCLGrid2D sinoCL, OpenCLGrid3D gridCL, int projIdx){
+		
+		geometry = Configuration.getGlobalConfiguration().getGeometry();
+		int maxV = geometry.getDetectorHeight();
+		int maxU = geometry.getDetectorWidth();
+		float spacingV = (float)geometry.getPixelDimensionY();
+		float spacingU = (float)geometry.getPixelDimensionX();
+		int imgSizeX = geometry.getReconDimensionX();
+		int imgSizeY = geometry.getReconDimensionY();
+		int imgSizeZ = geometry.getReconDimensionZ();
+		Projection[] projMats = geometry.getProjectionMatrices();
+		int maxProjs = geometry.getProjectionStackSize();
+		if(projIdx+1 > maxProjs || 0 > projIdx){
+			System.err.println("ConeBeamProjector: Invalid projection index");
+		}
+		float spacingX = (float)geometry.getVoxelSpacingX();
+		float spacingY = (float)geometry.getVoxelSpacingY();
+		float spacingZ = (float)geometry.getVoxelSpacingZ();
+		float originX = (float)-geometry.getOriginX();
+		float originY = (float)-geometry.getOriginY();
+		float originZ = (float)-geometry.getOriginZ();
+		SimpleVector srcPos = projMats[projIdx].computeCameraCenter();
+		float srcX = (float)srcPos.getElement(0);
+		float srcY = (float)srcPos.getElement(1);
+		float srcZ = (float)srcPos.getElement(2);
+		SimpleVector aixs = projMats[projIdx].computePrincipalAxis();
+		float pdX = (float)aixs.getElement(0);
+		float pdY = (float)aixs.getElement(1);
+		float pdZ = (float)aixs.getElement(2);
+		System.out.println(srcX + " "+ srcY + " " + srcZ + " " + pdX + " " + pdY + " " + pdZ + " ");
+		System.out.println(spacingX + " "+ spacingY + " " + spacingZ + " " + originX + " " + originY + " " + originZ + " " + imgSizeX + " " + imgSizeY + " " + imgSizeZ + " ");
+		System.out.println(maxU + " " + maxV + " " + spacingU + " " + spacingV);
+		
+		imageGrid = context.createImage3d(gridCL.getDelegate().getCLBuffer().getBuffer(), (int)gridCL.getSize()[0], (int)gridCL.getSize()[1], (int)gridCL.getSize()[2],format, Mem.READ_ONLY);
+
+		queue
+		.putCopyBufferToImage(gridCL.getDelegate().getCLBuffer(), imageGrid)
+		.finish();
+
+		kernelFunction
+		.putArg(imageGrid)
+		.putArg(sinoCL.getDelegate().getCLBuffer())
+		.putArg(imgSizeX)
+		.putArg(imgSizeY)
+		.putArg(imgSizeZ)
+		.putArg(originX)
+		.putArg(originY)
+		.putArg(originZ)
+		.putArg(spacingX)
+		.putArg(spacingY)
+		.putArg(spacingZ)
+		.putArg(maxU)
+		.putArg(maxV)
+		.putArg(spacingU)
+		.putArg(spacingV)
+		.putArg(srcX)
+		.putArg(srcY)
+		.putArg(srcZ)
+		.putArg(pdX)
+		.putArg(pdY)
+		.putArg(pdZ);
+	
+		queue
+		.put2DRangeKernel(kernelFunction, 0, 0, globalWorkSizeU, globalWorkSizeV,localWorkSize, localWorkSize).finish();
+
+		kernelFunction.rewind();
+		sinoCL.getDelegate().notifyDeviceChange();
 	}
 
 	public Grid2D projectPixelDriven(Grid3D grid, int projIdx) {
@@ -250,8 +363,8 @@ public class ConeBeamProjector {
 
 		// Assumed the vectors have only one non-zero element
 		// use 
-		du[0] = 1;
-		dv[1] = 1;
+//		du[0] = 1;
+//		dv[1] = 1;
 
 
 
@@ -360,6 +473,9 @@ public class ConeBeamProjector {
 		volumeSize[1] = geometry.getReconDimensionY();
 		volumeSize[2] = geometry.getReconDimensionZ();
 
+		maxProjs = geometry.getProjectionStackSize();
+		projMats = geometry.getProjectionMatrices();
+		
 		volumeEdgeMinPoint = new float[3];
 		for (int i=0; i < 3; i ++){
 			volumeEdgeMinPoint[i] = (float) (-0.5 + CONRAD.SMALL_VALUE);

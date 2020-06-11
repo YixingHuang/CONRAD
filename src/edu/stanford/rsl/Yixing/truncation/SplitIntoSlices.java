@@ -20,7 +20,7 @@ public class SplitIntoSlices {
 		new ImageJ();
 		
 		String path = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\recon\\";
-		String path2 = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\trainingData_d10\\";
+		String path2 = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\trainingData_d102\\";
 		String path3;
 		ImagePlus imp1, imp2;
 		String name1, name2, saveName1, saveName2;
@@ -29,8 +29,8 @@ public class SplitIntoSlices {
 		int saveIndex, getIndex;
 		for(int idx = 18; idx<= 18; idx ++){
 			name1 = path + "reconLimited" + idx + ".tif";
-			//name2 = path + "reconGT" + idx + ".tif";
-			name2 = path + "artifacts" + idx + ".tif";
+			name2 = path + "reconGT" + idx + ".tif";
+			//name2 = path + "artifacts" + idx + ".tif";
 			imp1=IJ.openImage(name1);
 			data = ImageUtil.wrapImagePlus(imp1);
 		    
