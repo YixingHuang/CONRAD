@@ -1,4 +1,4 @@
-package edu.stanford.rsl.Yixing.Celphalometric;
+package edu.stanford.rsl.Yixing.Celphalometric.superResolution;
 
 import java.io.IOException;
 
@@ -10,78 +10,61 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import flanagan.interpolation.*;
 
-public class GenerateSuperResolutionTrainingPatchesLR {
+public class GenerateTestPatchesOverlap {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		GenerateSuperResolutionTrainingPatchesLR obj = new GenerateSuperResolutionTrainingPatchesLR();
-		String path = "D:\\Tasks\\FAU4\\Cephalometric\\SuperResolutionImages2\\";
-		String trainingPath = "D:\\imageSuperResolutionV2_1\\low_res\\trainingss\\";
-		String trainingPath2 = "D:\\imageSuperResolutionV2_1\\high_res\\training\\";
-		String valPath = "D:\\imageSuperResolutionV2_1\\low_res\\validationss\\";
-		String valPath2 = "D:\\imageSuperResolutionV2_1\\high_res\\validation\\";
-		String savePath, savePath2;
-		String saveName, saveName2;
+		boolean isPix = true;
+		GenerateTestPatchesOverlap obj = new GenerateTestPatchesOverlap();
+		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\";
+		String savePath;
+		if(isPix)
+			savePath = "D:\\Pix2pix\\tools\\superResolution\\testCelp\\";
+		else
+			savePath = "D:\\imageSuperResolutionV2_1\\low_res\\testCelpss\\";
+		
+		String saveName;
 		ImagePlus imp;
-		Grid2D input, output;
-		Grid2D ds, us, bs;
-		Grid2D gtcopy;
+		Grid2D ds, us, input, output;
 		String imgNameIn, imgNameOut;
 		int startX, startY;
 		int saveId = 1;
 		Grid2D patchIn, patchOut, merge;
-		int szIn = 64;
-		int factor = 5;
-		int szOut = szIn * factor;
+		int sz = 256;
 		
-		patchIn = new Grid2D(szIn, szIn);
-		patchOut = new Grid2D(szOut, szOut);
-		for(int idx = 1; idx <=150; idx ++) {
-			imgNameIn = path + "data" + idx + "_rs2.png";
+		patchIn = new Grid2D(sz, sz);
+		patchOut = new Grid2D(sz, sz);
+		for(int idx = 0; idx <= 0; idx ++) {
+			imgNameIn = path + "s" + idx + ".png";
 			imp = IJ.openImage(imgNameIn);
-			input = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-			imgNameOut = path + "data" + idx + "_mask.png";
-			imp = IJ.openImage(imgNameOut);
-			output = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-			if(idx <= 100) {
-				savePath = trainingPath;
-				savePath2 = trainingPath2;
-			}
-			else
-			{
-				savePath = valPath;
-				savePath2 = valPath2;
-			}
-            for(int i = 0; i < 6; i++) {
-            	for(int j = 0; j < 7; j++ ) {
-            		startX = i * szIn;
-            		startY = j * szIn;
-//            		saveId = idx * 100 + j * 10 + i;
-            		for(int x = 0; x < szIn; x++)
-            			for(int y = 0; y < szIn; y++)
-            				patchIn.setAtIndex(x, y, input.getAtIndex(startX + x, startY + y));
-            			
-            		for(int x = 0; x < szOut; x++)
-                		for(int y = 0; y < szOut; y++)
-                			patchOut.setAtIndex(x, y, output.getAtIndex(startX * factor + x, startY * factor + y));
-
-            		//this is for merged images
-//            		merge = obj.mergeImages(patchIn, patchOut);
-//            		saveName = savePath + saveId + ".png";
-//            		imp = ImageUtil.wrapGrid(merge, null);
-//            		imp.setDisplayRange(0, 255);
-//            		IJ.saveAs(imp, "png", saveName);
-            		
+			us = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
+            for(int i = 0; i <= 18; i++) {
+            	for(int j = 0; j <= 18; j++ ) {
+            		startX = i * 128;
+            		startY = j * 128;
+            		saveId = idx * 10000 + j * 100 + i;
+            		for(int x = 0; x < sz; x++) {
+            			for(int y = 0; y < sz; y++)
+            			{
+            				if((startX + x >= us.getSize()[0]) || (startY + y >= us.getSize()[1]))
+            					patchIn.setAtIndex(x, y, 0);
+            				else
+            					patchIn.setAtIndex(x, y, us.getAtIndex(startX + x, startY + y));
+            			}
+            		}
+            		patchOut = (Grid2D)patchIn.clone();
+            		merge = obj.mergeImages(patchIn, patchOut);
             		saveName = savePath + saveId + ".png";
-            		imp = ImageUtil.wrapGrid(patchIn, null);
+            		if(isPix)
+            			imp = ImageUtil.wrapGrid(merge, null);
+            		else
+            		{
+            			imp = ImageUtil.wrapGrid(patchIn, null);
+            			imp.setDisplayRange(0, 255);
+            			IJ.run(imp, "RGB Color", "");
+            		}
             		imp.setDisplayRange(0, 255);
-//            		IJ.run(imp, "RGB Color", "");
             		IJ.saveAs(imp, "png", saveName);
-            		saveName2 = savePath2 + saveId + ".png";
-            		imp = ImageUtil.wrapGrid(patchOut, null);
-            		imp.setDisplayRange(0, 255);
-//            		IJ.run(imp, "RGB Color", "");
-            		IJ.saveAs(imp, "png", saveName2);
-            		saveId ++;
+            		
             	}
             }
             System.out.print(idx + " ");

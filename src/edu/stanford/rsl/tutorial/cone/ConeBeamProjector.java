@@ -186,10 +186,11 @@ public class ConeBeamProjector {
 		float pdX = (float)aixs.getElement(0);
 		float pdY = (float)aixs.getElement(1);
 		float pdZ = (float)aixs.getElement(2);
-		System.out.println(srcX + " "+ srcY + " " + srcZ + " " + pdX + " " + pdY + " " + pdZ + " ");
-		System.out.println(spacingX + " "+ spacingY + " " + spacingZ + " " + originX + " " + originY + " " + originZ + " " + imgSizeX + " " + imgSizeY + " " + imgSizeZ + " ");
-		System.out.println(maxU + " " + maxV + " " + spacingU + " " + spacingV);
-		
+//		System.out.println(srcX + " "+ srcY + " " + srcZ + " " + pdX + " " + pdY + " " + pdZ + " ");
+//		System.out.println(spacingX + " "+ spacingY + " " + spacingZ + " " + originX + " " + originY + " " + originZ + " " + imgSizeX + " " + imgSizeY + " " + imgSizeZ + " ");
+//		System.out.println(maxU + " " + maxV + " " + spacingU + " " + spacingV);
+//		System.out.println(gridCL.getSize()[0] + " " + gridCL.getSize()[1]+ " " + gridCL.getSize()[2]);
+//		System.out.println(" ");
 		imageGrid = context.createImage3d(gridCL.getDelegate().getCLBuffer().getBuffer(), (int)gridCL.getSize()[0], (int)gridCL.getSize()[1], (int)gridCL.getSize()[2],format, Mem.READ_ONLY);
 
 		queue

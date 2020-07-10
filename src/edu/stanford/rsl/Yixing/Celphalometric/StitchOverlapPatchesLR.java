@@ -9,25 +9,29 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 
-public class StitchOverlapPatches {
+public class StitchOverlapPatchesLR {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		boolean isPix = false;
+		int tag = 0;
 		GenerateTestPatches obj = new GenerateTestPatches();
 		String path;
-		if(isPix)
-			path = "D:\\Pix2pix\\superResolutionResults\\superResolution_testCelp3\\images\\";
+		String savePath;
+		if(tag == 0) {
+			path = "D:\\imageSuperResolutionV2_1\\testResults\\RDN5_celp\\";
+			savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\celpRDNMask";
+		}
 		else
-//			path = "D:\\imageSuperResolutionV2_1\\testResults\\RDN1_celp\\";
-			path = "D:\\imageSuperResolutionV2_1\\testResults\\RRDN1_celp\\";
-		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\";
+		{
+			path = "D:\\imageSuperResolutionV2_1\\testResults\\RRDN5_celp\\";
+			savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\celpRRDN";
+		}
 		String saveName;
 		ImagePlus imp;
 		Grid2D patch;
 		String imgNameIn;
 		int startX, startY;
 		int saveId = 1;
-		int sz = 256;
+		int sz = 320;
 		
 		String maskPath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\smask0.png";
 		imp = IJ.openImage(maskPath);
@@ -42,16 +46,13 @@ public class StitchOverlapPatches {
 
 		Grid2D us = new Grid2D(2560, 2560);
 		for(int idx = 0; idx <= 0; idx ++) {
-            for(int i = 0; i <= 18; i++) {
-            	for(int j = 0; j <= 18; j++ ) {
-            		startX = i * 128;
-            		startY = j * 128;
+            for(int i = 0; i <= 16; i++) {
+            	for(int j = 0; j <= 16; j++ ) {
+            		startX = i * 128 * 5;
+            		startY = j * 128 * 5;
             		saveId = idx * 10000 + j * 100 + i;
             		System.out.println("i = " + i + ", j =" + j);
-            		if(isPix)
-            			imgNameIn = path + saveId + "-outputs.png";
-            		else
-            			imgNameIn = path + saveId + ".png";
+            		imgNameIn = path + saveId + ".png";
             		imp = IJ.openImage(imgNameIn);
         			patch = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
         			
@@ -100,11 +101,8 @@ public class StitchOverlapPatches {
             }
             us.clone().show("us");
             us.getGridOperator().multiplyBy(us, mask);
-            if(isPix)
-            	saveName = savePath + "pix2pixGAN" + idx + ".png";
-            else
-//            	saveName = savePath + "RDNssMask" + idx + ".png";
-            	saveName = savePath + "RRDNss" + idx + ".png";
+
+            saveName = savePath + idx + ".png";
     		imp = ImageUtil.wrapGrid(us, null);
     		imp.setDisplayRange(0, 255);
     		IJ.saveAs(imp, "png", saveName);

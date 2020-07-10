@@ -1,4 +1,4 @@
-package edu.stanford.rsl.Yixing.Celphalometric;
+package edu.stanford.rsl.Yixing.Celphalometric.superResolution;
 
 import java.io.IOException;
 
@@ -10,34 +10,35 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import flanagan.interpolation.*;
 
-public class GenerateSuperResolutionTrainingImages2 {
+public class GenerateSuperResolutionTrainingImagesLR2 {
 	/**
-	 * Using the upsampled input images, i.e., the input image size equals the output size for the neural network
+	 * Keep the original size of low resolutions
 	 * Fixed the image origins
 	 * @param args
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		GenerateSuperResolutionTrainingImages2 obj = new GenerateSuperResolutionTrainingImages2();
+		GenerateSuperResolutionTrainingImagesLR2 obj = new GenerateSuperResolutionTrainingImagesLR2();
 		String path = "D:\\Tasks\\FAU4\\MasterProjectOfFan\\RawImage\\TrainingData\\";
 		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\SuperResolutionImages2\\";
 		String name;
 		ImagePlus imp;
 		Grid2D gt;
 		Grid2D ds, us, dds;
-		int factor = 10;
+		int factor = 5;
+		int factor2 = 2;
 		Grid2D gtcopy;
 		String imgNameIn, imgNameIn2, imgNameOut;
 		
 		int[] size0 = new int[]{1935, 2400};
 		double[] spacing0 = new double[] {0.1, 0.1};
 		double[] origin0 = new double[]{-(size0[0] - 1.0) * spacing0[0]/2.0, -(size0[1] - 1.0) * spacing0[1]/2.0};
-		int width = size0[0];
-		int height = size0[1];
+		int width = (size0[0] - 1)/factor + 1;
+		int height = (size0[1] - 1)/factor + 1;
 		us = new Grid2D(width, height);
-		us.setSpacing(0.1, 0.1);
-		us.setOrigin(origin0[0], origin0[1]);
+		us.setSpacing(0.1 * factor, 0.1 * factor);
+		us.setOrigin(origin0[0] + spacing0[0] * (factor - 1)/2.0, origin0[1] + spacing0[1] * (factor - 1)/2.0);
 		for(int idx = 1; idx <=150; idx ++) {
 			String idxS = String.format("%03d", idx);
 			name = path + idxS + ".bmp";
@@ -47,21 +48,22 @@ public class GenerateSuperResolutionTrainingImages2 {
 			gt.setOrigin(origin0);
 //			gt.clone().show("gt");
 			ds = obj.subsampling(gt,  factor);
-			obj.upsampling2(ds, us);
+			dds = obj.subsampling(ds, factor2);
+			obj.upsampling2(dds, us);
 //			imp = ImageUtil.wrapGrid(ds, null);
 //			imgNameIn = savePath + "data" + idx + ".png";
 //			imp.setDisplayRange(0, 255);
 //			IJ.saveAs(imp, "png", imgNameIn);
 			
 			imp = ImageUtil.wrapGrid(us, null);
-			imgNameIn2 = savePath + "data" + idx + "_us" + factor + ".png";
+			imgNameIn2 = savePath + "data" + idx + "_rs" + factor2 + ".png";
 			imp.setDisplayRange(0, 255);
 			IJ.saveAs(imp, "png", imgNameIn2);
 			
-//			imp = ImageUtil.wrapGrid(gt, null);
-//			imp.setDisplayRange(0, 255);
-//			imgNameOut = savePath + "data" + idx + "_mask.png";
-//			IJ.saveAs(imp, "png", imgNameOut);
+			imp = ImageUtil.wrapGrid(gt, null);
+			imp.setDisplayRange(0, 255);
+			imgNameOut = savePath + "data" + idx + "_mask.png";
+			IJ.saveAs(imp, "png", imgNameOut);
 			System.out.print(" " + idx);
 		}
 		

@@ -1,4 +1,4 @@
-package edu.stanford.rsl.Yixing.Celphalometric;
+package edu.stanford.rsl.Yixing.Celphalometric.superResolution;
 
 import java.io.IOException;
 
@@ -10,13 +10,15 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import flanagan.interpolation.*;
 
-public class GenerateSuperResolutionTrainingPatchesSSForPix2pix {
+public class GenerateSuperResolutionTrainingPatchesSS {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		GenerateSuperResolutionTrainingPatchesSSForPix2pix obj = new GenerateSuperResolutionTrainingPatchesSSForPix2pix();
-		String path = "D:\\Tasks\\FAU4\\Cephalometric\\SuperResolutionImages2\\";
-		String trainingPath = "D:\\Pix2pix\\tools\\superResolution\\train\\";
-		String valPath = "D:\\Pix2pix\\tools\\superResolution\\val\\";
+		GenerateSuperResolutionTrainingPatchesSS obj = new GenerateSuperResolutionTrainingPatchesSS();
+		String path = "D:\\Tasks\\FAU4\\Cephalometric\\SuperResolutionTestImages\\";
+		String trainingPath = "D:\\imageSuperResolutionV2_1\\low_res\\trainingss\\";
+		String trainingPath2 = "D:\\imageSuperResolutionV2_1\\high_res\\trainingss\\";
+		String valPath = "D:\\imageSuperResolutionV2_1\\low_res\\testset1\\";
+		String valPath2 = "D:\\imageSuperResolutionV2_1\\high_res\\testset1\\";
 		String savePath, savePath2;
 		String saveName, saveName2;
 		ImagePlus imp;
@@ -31,7 +33,7 @@ public class GenerateSuperResolutionTrainingPatchesSSForPix2pix {
 		
 		patchIn = new Grid2D(szIn, szIn);
 		patchOut = new Grid2D(szIn, szIn);
-		for(int idx = 1; idx <=150; idx ++) {
+		for(int idx = 151; idx <= 200; idx ++) {
 			imgNameIn = path + "data" + idx + "_us10.png";
 			imp = IJ.openImage(imgNameIn);
 			input = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
@@ -40,10 +42,12 @@ public class GenerateSuperResolutionTrainingPatchesSSForPix2pix {
 			output = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
 			if(idx <= 100) {
 				savePath = trainingPath;
+				savePath2 = trainingPath2;
 			}
 			else
 			{
 				savePath = valPath;
+				savePath2 = valPath2;
 			}
             for(int i = 0; i < 7; i++) {
             	for(int j = 0; j < 8; j++ ) {
@@ -59,12 +63,22 @@ public class GenerateSuperResolutionTrainingPatchesSSForPix2pix {
                 		}
 
             		//this is for merged images
-            		merge = obj.mergeImages(patchIn, patchOut);
-            		saveName = savePath + saveId + ".png";
-            		imp = ImageUtil.wrapGrid(merge, null);
-            		imp.setDisplayRange(0, 255);
-            		IJ.saveAs(imp, "png", saveName);
+//            		merge = obj.mergeImages(patchIn, patchOut);
+//            		saveName = savePath + saveId + ".png";
+//            		imp = ImageUtil.wrapGrid(merge, null);
+//            		imp.setDisplayRange(0, 255);
+//            		IJ.saveAs(imp, "png", saveName);
             		
+            		saveName = savePath + saveId + ".png";
+            		imp = ImageUtil.wrapGrid(patchIn, null);
+            		imp.setDisplayRange(0, 255);
+            		IJ.run(imp, "RGB Color", "");
+            		IJ.saveAs(imp, "png", saveName);
+            		saveName2 = savePath2 + saveId + ".png";
+            		imp = ImageUtil.wrapGrid(patchOut, null);
+            		imp.setDisplayRange(0, 255);
+            		IJ.run(imp, "RGB Color", "");
+            		IJ.saveAs(imp, "png", saveName2);
             		saveId ++;
             	}
             }

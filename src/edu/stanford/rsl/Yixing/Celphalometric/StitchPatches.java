@@ -2,6 +2,7 @@ package edu.stanford.rsl.Yixing.Celphalometric;
 
 import java.io.IOException;
 
+import edu.stanford.rsl.Yixing.Celphalometric.superResolution.GenerateTestPatches;
 import edu.stanford.rsl.conrad.data.numeric.Grid2D;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
 import ij.IJ;

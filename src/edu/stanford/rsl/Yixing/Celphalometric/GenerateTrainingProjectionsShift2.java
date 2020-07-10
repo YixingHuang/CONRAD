@@ -16,17 +16,19 @@ import edu.stanford.rsl.conrad.data.numeric.NumericPointwiseOperators;
 import edu.stanford.rsl.conrad.data.numeric.opencl.OpenCLGrid2D;
 import edu.stanford.rsl.conrad.data.numeric.opencl.OpenCLGrid3D;
 import edu.stanford.rsl.conrad.geometry.Projection;
+import edu.stanford.rsl.conrad.geometry.shapes.simple.PointND;
 import edu.stanford.rsl.conrad.geometry.trajectories.Trajectory;
 import edu.stanford.rsl.conrad.utils.Configuration;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
 import edu.stanford.rsl.tutorial.cone.ConeBeamBackprojector;
 import edu.stanford.rsl.tutorial.cone.ConeBeamProjector;
 
-public class GenerateCelphaloFromCTPerspectiveProjection {
+public class GenerateTrainingProjectionsShift2 {
 	protected int maxProjs;
 	public int imgSizeX;
 	public int imgSizeY;
 	public int imgSizeZ;
+	protected Configuration conf;
 	protected Trajectory geo = null;
 	protected int width;
 	protected int height;
@@ -37,119 +39,125 @@ public class GenerateCelphaloFromCTPerspectiveProjection {
 	protected double originX;
 	protected double originY;
 	protected double originZ;
+	protected PointND origin;
 	public ConeBeamProjector cbp;
 //	public ConeBeamBackprojector cbbp;
 	
 	public OpenCLGrid3D sinoCL, volCL;
 	public OpenCLGrid2D sinoCL2D;
 	public Grid3D sinogram;
+
 	
 	public static void main(String[] args) throws Exception{
 		new ImageJ();
-		double [] spacingAll = new double[]{0.4883,0.4883,0.6250, 
-				0.5469, 0.5469,0.6250, 
-				0.4883, 0.4883, 0.6250, 
-				0.4707, 0.4707, 0.6250, 
-				0.4980, 0.4980, 0.6250};
-		GenerateCelphaloFromCTPerspectiveProjection obj = new GenerateCelphaloFromCTPerspectiveProjection();
-		String inputPath = "E:\\CQ500CTData\\completeHeadData\\";
-		String outputPath = inputPath;
-		String name;
+		SpacingDataNature sp = new SpacingDataNature();
+		GenerateTrainingProjectionsShift2 obj = new GenerateTrainingProjectionsShift2();
+		String inputPath = "E:\\CQ500CTData\\UpperHalf\\";
+//		String inputPath = "E:\\CQ500CTData\\LowerHalf\\";
+		String outputPath = "D:\\Tasks\\FAU4\\Cephalometric\\coneBeamProjectionsLower\\";
+		String name, saveName;
 		float s = 0.00002f;
 		obj.initialGeometry();
-		obj.cbp=new ConeBeamProjector();
-
-		for(int idx = 0; idx <= 0; idx++) {
-			name = inputPath + idx + "p2.tif";
-			ImagePlus imp = IJ.openImage(name);
+		
+		int num = sp.getNumberOfCases();
+		int idx;
+		String idxS;
+		ImagePlus imp;
+		double heightZ;
+		double z0 = 220;
+		int deltaZNum = 0;
+		Grid3D vol2;
+		for(int i = 0; i < num; i++) {
+			idx = (int)sp.getAt(i, 0);
+			idxS = String.format("%03d", idx);
+			name = inputPath + "data" + idxS + ".tif";
+			File outPutDir=new File(name);
+			if (!outPutDir.exists())
+				continue;
+		    System.out.println("idx = " + idx + " ");
+			imp = IJ.openImage(name);
 			Grid3D vol = ImageUtil.wrapImagePlus(imp);
-			vol.setSpacing(spacingAll[idx * 3], spacingAll[idx * 3 + 1], spacingAll[idx * 3 + 2]); 
-			Grid3D bone = new Grid3D(vol.getSize()[0], vol.getSize()[1], vol.getSize()[2]);
-			Grid3D soft = new Grid3D(vol.getSize()[0], vol.getSize()[1], vol.getSize()[2]);
-			Grid3D air = new Grid3D(vol.getSize()[0], vol.getSize()[1], vol.getSize()[2]);
-			bone.setSpacing(spacingAll[idx * 3], spacingAll[idx * 3 + 1], spacingAll[idx * 3 + 2]); 
-			soft.setSpacing(spacingAll[idx * 3], spacingAll[idx * 3 + 1], spacingAll[idx * 3 + 2]); 
-			air.setSpacing(spacingAll[idx * 3], spacingAll[idx * 3 + 1], spacingAll[idx * 3 + 2]); 
-//			obj.enhanceBones(vol, 1200, 3.0f);
-//			obj.enhanceBonesAndAir(vol, 1200, 2.0f, 100, -500);
-			obj.segmentRegions(vol, bone, soft, air, 1500, 400);
+			obj.thresholdVol(vol, 900, 3600);
+//			obj.thresholdVol(vol, 0, 3600);
 			vol.getGridOperator().multiplyBy(vol, s);
-			bone.getGridOperator().multiplyBy(bone, s);
-			soft.getGridOperator().multiplyBy(soft, s);
-//			vol.show("vol");
+			obj.spacingX = sp.getAt(i, 1);
+			obj.spacingY = sp.getAt(i, 2);
+			obj.spacingZ = sp.getAt(i, 3);
+			heightZ = vol.getSize()[2] * obj.spacingZ;
+			if(heightZ < 0.5 * z0) {
+				continue;
+			}
+			else if(heightZ < z0) {
+				deltaZNum = Math.round((float)((z0 - heightZ) / obj.spacingZ));
+				obj.imgSizeZ = vol.getSize()[2] + deltaZNum;
+//				vol2 = new Grid3D(vol.getSize()[0], vol.getSize()[1], obj.imgSizeZ);
+//				obj.zeroPadding(vol, vol2, deltaZNum);
+				vol = obj.zeroPadding2(vol, deltaZNum);	
+			}
+			else
+			{
+				obj.imgSizeZ = vol.getSize()[2];
+//				vol2 = (Grid3D) vol.clone();
+			}
+			obj.resetGeometry();
+			obj.cbp=new ConeBeamProjector();
 			obj.volCL = new OpenCLGrid3D(vol);
+	
+			
 			obj.getPerspectiveProjection();
-//			Grid2D p = new Grid2D(obj.sinoCL.getSubGrid(0));
-//			obj.sinoCL.release();
+
 			Grid2D p = new Grid2D(obj.sinoCL2D);
 			obj.sinoCL2D.release();
 			obj.volCL.release();
 			p.setSpacing(obj.detSpacingX, obj.detSpacingY);
 			p.setOrigin(-(p.getSize()[0] - 1.0) * p.getSpacing()[0]/2.0, -(p.getSize()[1] - 1.0) * p.getSpacing()[1]/2.0);
 
-			Grid2D p2 = obj.fliplrud(p);
+			Grid2D p2 = obj.flipud(p);
 //			p2.getGridOperator().removeNegative(p2);
-			p2.show("projection" + idx);
-			
-			Grid2D celp = p2;
-			Grid2D mask = obj.getBackgroundMask(celp, 0.08f);
-			celp.clone().show("celp" + idx);
-			Grid2D celp2 = obj.sigmoidTransform2(celp, 2.68f, 1);
-			celp2.clone().show("celpTahn2_" + idx);
-			celp2.getGridOperator().multiplyBy(celp2, mask);
-			celp2.clone().show("afterMask" + idx);
-			Grid2D celp3 = obj.sigmoidTransform2(celp, 2.68f, 1.5f);
-			celp3.clone().show("celpTahn3_" + idx);
-			celp3.getGridOperator().multiplyBy(celp3, mask);
-			celp3.clone().show("afterMask2" + idx);
-//			imp = ImageUtil.wrapGrid(celp, null);
-//			name = outputPath + "celp" + idx + ".tif";
-//		    IJ.saveAs(imp, "Tiff", name);
-						
-			vol = obj.combineBoneAndSoft(bone, soft, 1.4f);
-			obj.volCL = new OpenCLGrid3D(vol);
-//			Grid2D pCombine = obj.projection(vol);
-			obj.getPerspectiveProjection();
-			Grid2D pCombine = new Grid2D(obj.sinoCL2D);
-			obj.sinoCL2D.release();
-			obj.volCL.release();
-			pCombine.setSpacing(obj.detSpacingX, obj.detSpacingY);
-			pCombine.setOrigin(-(p.getSize()[0] - 1.0) * p.getSpacing()[0]/2.0, -(p.getSize()[1] - 1.0) * p.getSpacing()[1]/2.0);
-			Grid2D pCombine2 = obj.fliplrud(pCombine);
-			pCombine2.show("projection combine" + idx);
+//			p2.show("projection" + idx);
+			imp = ImageUtil.wrapGrid(p2, null);
+			saveName = outputPath + idx + "_2.tif";
+			IJ.saveAs(imp, "tiff", saveName);
 
-			Grid2D celpCombine = pCombine2;
-			celpCombine.clone().show("celp combine");
-			//celpCombine.getGridOperator().divideBy(celpCombine, 1.1f);
-			Grid2D celpCombine3 = obj.sigmoidTransform2(celpCombine, 3.f, 1.5f);
-			celpCombine3.clone().show("celpTahn3_" + idx);
-			celpCombine3.getGridOperator().multiplyBy(celpCombine3, mask);
-			celpCombine3.clone().show("afterMask2" + idx);
-			
-			Grid2D gradient = obj.computeGradient(mask, 0.5f);
-			for(int i = 444; i < 447; i++)
-				for(int j = 185; j <=187; j++)
-					gradient.setAtIndex(i, j, 0);
-			gradient.setAtIndex(447, 211, 0);
-			gradient.setAtIndex(446, 211, 0);
-			gradient.setAtIndex(446, 212, 0);
-			gradient.show("gradient");
-			Grid3D celpRGB = new Grid3D(celpCombine3.getWidth(), celpCombine3.getHeight(), 3);
-			for(int i = 0; i < 3; i++)
-				celpRGB.setSubGrid(i, (Grid2D)celpCombine3.clone());
-			for(int i = 0; i < gradient.getWidth(); i++)
-				for(int j = 0; j < gradient.getHeight(); j++) {
-					if(gradient.getAtIndex(i, j) > 0)
-					{
-						celpRGB.setAtIndex(i, j, 0, 255);
-						celpRGB.setAtIndex(i, j, 1, 0);
-						celpRGB.setAtIndex(i, j, 2, 0);
-					}
-				}
-			celpRGB.clone().show("RGB");
-		    System.out.print(idx + " ");
+		    obj.cbp.unload();
 		}
 
+	}
+	private void thresholdVol(Grid3D vol, float thres1, float thres2) {
+		for(int i = 0; i < vol.getSize()[0]; i++)
+			for(int j = 0; j < vol.getSize()[1]; j++)
+				for(int k = 0; k < vol.getSize()[2]; k++)
+					if(vol.getAtIndex(i, j, k) < thres1)
+						vol.setAtIndex(i, j, k, 0);
+					else if(vol.getAtIndex(i, j, k) > thres2)
+						vol.setAtIndex(i, j, k, thres2);
+	}
+	
+	private void zeroPadding(Grid3D vol, Grid3D vol2, int numZ) {
+		for(int i = 0; i < vol.getSize()[0]; i++)
+			for(int j = 0; j < vol.getSize()[1]; j++)
+				for(int k = 0; k < vol.getSize()[2]; k++)
+					vol2.setAtIndex(i, j, k + numZ, vol.getAtIndex(i, j, k));
+	}
+	
+	private Grid3D zeroPadding(Grid3D vol, int numZ) {
+		Grid3D vol2 = new Grid3D(vol.getSize()[0], vol.getSize()[1], vol.getSize()[2] + numZ);
+		for(int i = 0; i < vol.getSize()[0]; i++)
+			for(int j = 0; j < vol.getSize()[1]; j++)
+				for(int k = 0; k < vol.getSize()[2]; k++)
+					vol2.setAtIndex(i, j, k + numZ, vol.getAtIndex(i, j, k));
+		
+		return vol2;
+	}
+	
+	private Grid3D zeroPadding2(Grid3D vol, int numZ) {
+		Grid3D vol2 = new Grid3D(vol.getSize()[0], vol.getSize()[1], vol.getSize()[2] + numZ);
+		for(int i = 0; i < vol.getSize()[0]; i++)
+			for(int j = 0; j < vol.getSize()[1]; j++)
+				for(int k = 0; k < vol.getSize()[2]; k++)
+					vol2.setAtIndex(i, j, k, vol.getAtIndex(i, j, k));
+		
+		return vol2;
 	}
 	
 	public Grid2D computeGradient(Grid2D img, float thres) {
@@ -177,10 +185,13 @@ public class GenerateCelphaloFromCTPerspectiveProjection {
 	
 	public void initialGeometry() throws Exception {
 		Configuration.loadConfiguration();
-		Configuration conf = Configuration.getGlobalConfiguration();
+		this.conf = Configuration.getGlobalConfiguration();
 		geo = conf.getGeometry();
+		
 		width = geo.getDetectorWidth();
 		height = geo.getDetectorHeight();
+		detSpacingX = geo.getPixelDimensionX();
+		detSpacingY = geo.getPixelDimensionY();
 		
 		// create context
 		maxProjs = geo.getProjectionStackSize();
@@ -193,23 +204,37 @@ public class GenerateCelphaloFromCTPerspectiveProjection {
 		originX = geo.getOriginX();
 		originY = geo.getOriginY();
 		originZ = geo.getOriginZ();
-		detSpacingX = geo.getPixelDimensionX();
-		detSpacingY = geo.getPixelDimensionY();
-		System.out.println(detSpacingX + " " + detSpacingY);
-		System.out.println(spacingX+ " " + spacingY + " " + spacingZ);
-		System.out.println(originX+ " " + originY + " " + originZ);
-		System.out.println(geo.getDetectorOffsetU()+ " " + geo.getDetectorOffsetV());
+	
+
+//		System.out.println(detSpacingX + " " + detSpacingY);
+//		System.out.println(spacingX+ " " + spacingY + " " + spacingZ);
+//		System.out.println(originX+ " " + originY + " " + originZ);
+//		System.out.println(geo.getDetectorOffsetU()+ " " + geo.getDetectorOffsetV());
+//		System.out.println(" ");
+	}
+	
+	public void resetGeometry() {
+		geo.setReconDimensionZ(this.imgSizeZ);
+		geo.setVoxelSpacingX(this.spacingX);
+		geo.setVoxelSpacingY(this.spacingY);
+		geo.setVoxelSpacingZ(this.spacingZ);
+		this.originX = -(this.imgSizeX - 1)/2.0 * this.spacingX;
+		this.originY = -(this.imgSizeY - 1)/2.0 * this.spacingY;
+		this.originZ = -(this.imgSizeZ - 1)/2.0 * this.spacingZ;
+		this.origin = new PointND(this.originX, this.originY, this.originZ);
+		geo.setOriginInPixelsZ((this.imgSizeZ - 1)/2.0);
+		geo.setOriginInWorld(this.origin);
+//		geo.prepareForSerialization();
+//		this.conf.setGeometry(geo);
+//		Configuration.setGlobalConfiguration(conf);
+
 	}
 	
 	public void getPerspectiveProjection() throws Exception {
-//		sinoCL = new OpenCLGrid3D(new Grid3D(width, height, maxProjs));
-//		sinoCL.getDelegate().prepareForDeviceOperation();
-//		cbp.fastProjectRayDrivenCL(sinoCL, volCL);
-		//sinoCL.show("sinoCL");
 		volCL.getDelegate().prepareForDeviceOperation();
 		sinoCL2D = new OpenCLGrid2D(new Grid2D(width, height));
 		sinoCL2D.getDelegate().prepareForDeviceOperation();
-		cbp.projectRayDrivenCL2(sinoCL2D, volCL, 0);
+		cbp.projectRayDrivenCL2(sinoCL2D, volCL, 1);
 		sinoCL2D.getDelegate().notifyDeviceChange();;
 	}
 	
@@ -282,7 +307,7 @@ public class GenerateCelphaloFromCTPerspectiveProjection {
 		Grid2D img2 = new Grid2D(img.getWidth(), img.getHeight());
 		for(int i = 0; i < img.getSize()[0]; i++)
 			for(int j = 0; j < img.getSize()[1]; j++) {
-				val = (float)(210.0 / (1.0 + Math.exp(- a * ((double) img.getAtIndex(i, j) - t))) + 40);
+				val = (float)(215.0 / (1.0 + Math.exp(- a * ((double) img.getAtIndex(i, j) - t))) + 20);
 				img2.setAtIndex(i, j, val);
 			}
 		

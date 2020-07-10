@@ -1,4 +1,4 @@
-package edu.stanford.rsl.Yixing.Celphalometric;
+package edu.stanford.rsl.Yixing.Celphalometric.superResolution;
 
 import java.io.IOException;
 
@@ -10,49 +10,82 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import flanagan.interpolation.*;
 
-public class GenerateSuperResolutionTrainingImages {
+public class GenerateTestPatchesLROverlap {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		GenerateSuperResolutionTrainingImages obj = new GenerateSuperResolutionTrainingImages();
-		String path = "D:\\Tasks\\FAU4\\MasterProjectOfFan\\RawImage\\TrainingData\\";
-		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\SuperResolutionImages\\";
-		String name;
+		boolean isPix = false;
+		GenerateTestPatchesLROverlap obj = new GenerateTestPatchesLROverlap();
+		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\";
+		String savePath;
+		if(isPix)
+			savePath = "D:\\Pix2pix\\tools\\superResolution\\testCelp\\";
+		else
+			savePath = "D:\\imageSuperResolutionV2_1\\low_res\\testCelp\\";
+		
+		String saveName;
 		ImagePlus imp;
-		Grid2D gt;
-		Grid2D ds, us, bs;
-		int factor = 10;
-		Grid2D gtcopy;
+		Grid2D ds, us, input, output;
 		String imgNameIn, imgNameOut;
-		for(int idx = 1; idx <=150; idx ++) {
-			String idxS = String.format("%03d", idx);
-			name = path + idxS + ".bmp";
-			imp = IJ.openImage(name);
-			gt = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-			gt.setSpacing(1, 1);
-			gt.setOrigin(-(gt.getSize()[0] - 1.0) * gt.getSpacing()[0]/2.0, -(gt.getSize()[1] - 1.0) * gt.getSpacing()[1]/2.0);
-//			gt.clone().show("gt");
-			ds = obj.subsampling(gt,  factor);
-
-//			ds.clone().show("ds");
-			us = obj.upsampling(ds, factor);
-			us.getGridOperator().removeNegative(us);
-			obj.thresholding(us, 255);
-			imp = ImageUtil.wrapGrid(us, null);
-			imgNameIn = savePath + "data" + idx + ".png";
-			imp.setDisplayRange(0, 255);
-			IJ.saveAs(imp, "png", imgNameIn);
-			gtcopy = new Grid2D(us.getWidth(), us.getHeight());
-			for(int i = 0; i < us.getWidth(); i++)
-				for(int j = 0; j < us.getHeight(); j++)
-					gtcopy.setAtIndex(i, j, gt.getAtIndex(i, j));
-			imp = ImageUtil.wrapGrid(gtcopy, null);
-			imp.setDisplayRange(0, 255);
-			imgNameOut = savePath + "mask" + idx + ".png";
-			IJ.saveAs(imp, "png", imgNameOut);
+		int startX, startY;
+		int saveId = 1;
+		Grid2D patchIn, patchOut, merge;
+		int sz = 64;
+		
+		patchIn = new Grid2D(sz, sz);
+		patchOut = new Grid2D(sz, sz);
+		for(int idx = 0; idx <= 0; idx ++) {
+			imgNameIn = path + "p" + idx + ".png";
+			imp = IJ.openImage(imgNameIn);
+			us = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
+            for(int i = 0; i <= 16; i++) {
+            	for(int j = 0; j <= 16; j++ ) {
+            		startX = i * 32;
+            		startY = j * 32;
+//            for(int i = 7; i <= 7; i++) {
+//            	for(int j = 12; j <= 12; j++ ) {
+//            		startX = i * 32;
+//            		startY = j * 32;
+            		saveId = idx * 10000 + j * 100 + i;
+            		for(int x = 0; x < sz; x++) {
+            			for(int y = 0; y < sz; y++)
+            			{
+            				if((startX + x >= us.getSize()[0]) || (startY + y >= us.getSize()[1]))
+            					patchIn.setAtIndex(x, y, 0);
+            				else
+            					patchIn.setAtIndex(x, y, us.getAtIndex(startX + x, startY + y));
+            			}
+            		}
+            		patchOut = (Grid2D)patchIn.clone();
+            		merge = obj.mergeImages(patchIn, patchOut);
+            		saveName = savePath + saveId + ".png";
+            		if(isPix)
+            			imp = ImageUtil.wrapGrid(merge, null);
+            		else
+            		{
+            			imp = ImageUtil.wrapGrid(patchIn, null);
+            			imp.setDisplayRange(0, 255);
+            			IJ.run(imp, "RGB Color", "");
+            		}
+            		imp.setDisplayRange(0, 255);
+            		IJ.saveAs(imp, "png", saveName);
+            		
+            	}
+            }
+            System.out.print(idx + " ");
 		}
 	}
 	
-
+	Grid2D mergeImages(Grid2D data2D, Grid2D mask2D) {
+		Grid2D merge = new Grid2D(data2D.getSize()[0] * 2, data2D.getSize()[1]);
+		for(int i = 0; i < data2D.getSize()[0]; i++)
+			for(int j = 0; j < data2D.getSize()[1]; j++)
+			{
+				merge.setAtIndex(i, j, data2D.getAtIndex(i, j));
+				merge.setAtIndex(i + data2D.getSize()[0], j, mask2D.getAtIndex(i, j));
+			}
+		
+		return merge;
+	}
 	
 	public void thresholding(Grid2D img, float thres) {
 		for(int i = 0; i < img.getSize()[0]; i++)

@@ -1,4 +1,4 @@
-package edu.stanford.rsl.Yixing.Celphalometric;
+package edu.stanford.rsl.Yixing.Celphalometric.superResolution;
 
 import java.io.IOException;
 
@@ -10,53 +10,54 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import flanagan.interpolation.*;
 
-public class GenerateSuperResolutionTrainingImagesLR2 {
+public class GenerateSuperResolutionTrainingImagesLR {
 	/**
 	 * Keep the original size of low resolutions
-	 * Fixed the image origins
 	 * @param args
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		GenerateSuperResolutionTrainingImagesLR2 obj = new GenerateSuperResolutionTrainingImagesLR2();
+		GenerateSuperResolutionTrainingImagesLR obj = new GenerateSuperResolutionTrainingImagesLR();
 		String path = "D:\\Tasks\\FAU4\\MasterProjectOfFan\\RawImage\\TrainingData\\";
 		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\SuperResolutionImages2\\";
 		String name;
 		ImagePlus imp;
 		Grid2D gt;
 		Grid2D ds, us, dds;
-		int factor = 5;
-		int factor2 = 2;
+		int factor = 5, factor2;
 		Grid2D gtcopy;
 		String imgNameIn, imgNameIn2, imgNameOut;
-		
-		int[] size0 = new int[]{1935, 2400};
-		double[] spacing0 = new double[] {0.1, 0.1};
-		double[] origin0 = new double[]{-(size0[0] - 1.0) * spacing0[0]/2.0, -(size0[1] - 1.0) * spacing0[1]/2.0};
-		int width = (size0[0] - 1)/factor + 1;
-		int height = (size0[1] - 1)/factor + 1;
+		factor2 = factor * 4;
+		int width = (1935 - 1)/factor2 + 1;
+		int height = (2400 - 1)/factor2 + 1;
+		dds = new Grid2D(width, height);
+		dds.setSpacing(0.1 * factor2, 0.1 * factor2);
+		dds.setOrigin(-(dds.getSize()[0] - 1.0) * dds.getSpacing()[0]/2.0, -(dds.getSize()[1] - 1.0) * dds.getSpacing()[1]/2.0);
+	    width = (1935 - 1)/factor + 1;
+		height = (2400 - 1)/factor + 1;
 		us = new Grid2D(width, height);
 		us.setSpacing(0.1 * factor, 0.1 * factor);
-		us.setOrigin(origin0[0] + spacing0[0] * (factor - 1)/2.0, origin0[1] + spacing0[1] * (factor - 1)/2.0);
+		us.setOrigin(-(us.getSize()[0] - 1.0) * us.getSpacing()[0]/2.0, -(us.getSize()[1] - 1.0) * us.getSpacing()[1]/2.0);
 		for(int idx = 1; idx <=150; idx ++) {
 			String idxS = String.format("%03d", idx);
 			name = path + idxS + ".bmp";
 			imp = IJ.openImage(name);
 			gt = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-			gt.setSpacing(spacing0);
-			gt.setOrigin(origin0);
+			gt.setSpacing(0.1, 0.1);
+			gt.setOrigin(-(gt.getSize()[0] - 1.0) * gt.getSpacing()[0]/2.0, -(gt.getSize()[1] - 1.0) * gt.getSpacing()[1]/2.0);
 //			gt.clone().show("gt");
 			ds = obj.subsampling(gt,  factor);
-			dds = obj.subsampling(ds, factor2);
-			obj.upsampling2(dds, us);
+			obj.resampleGrid(dds, ds);
+			obj.resampleGrid(us, dds);
+
 //			imp = ImageUtil.wrapGrid(ds, null);
 //			imgNameIn = savePath + "data" + idx + ".png";
 //			imp.setDisplayRange(0, 255);
 //			IJ.saveAs(imp, "png", imgNameIn);
 			
 			imp = ImageUtil.wrapGrid(us, null);
-			imgNameIn2 = savePath + "data" + idx + "_rs" + factor2 + ".png";
+			imgNameIn2 = savePath + "data" + idx + "_rs4.png";
 			imp.setDisplayRange(0, 255);
 			IJ.saveAs(imp, "png", imgNameIn2);
 			
@@ -64,22 +65,9 @@ public class GenerateSuperResolutionTrainingImagesLR2 {
 //			imp.setDisplayRange(0, 255);
 //			imgNameOut = savePath + "data" + idx + "_mask.png";
 //			IJ.saveAs(imp, "png", imgNameOut);
-			System.out.print(" " + idx);
 		}
-		
 	}
 	
-	public Grid2D reoverSize(Grid2D img, int[] size) {
-		Grid2D img2 = new Grid2D(size[0], size[1]);
-		img2.setSpacing(img.getSpacing());
-		img2.setOrigin((-img2.getSize()[0] - 1.0) * img2.getSpacing()[0]/2.0, -(img2.getSize()[1] - 1.0) * img2.getSpacing()[1]/2.0);
-		if(img.getSize()[0] > size[0] || img.getSize()[1] > size[1])
-			System.out.println("Input image size is larger than the output size, input size = [" + img.getSize()[0] + "," + img.getSize()[1] + "].");
-		for(int i = 0; i < img.getSize()[0]; i++)
-			for(int j = 0; j < img.getSize()[1]; j++)
-				img2.setAtIndex(i, j, img.getAtIndex(i, j));
-		return img2;
-	}
 
 	
 	public void thresholding(Grid2D img, float thres) {
@@ -98,7 +86,7 @@ public class GenerateSuperResolutionTrainingImagesLR2 {
 		int height = (img.getHeight() - 1)/factor + 1;
 		Grid2D img2 = new Grid2D(width, height);
 		img2.setSpacing(img.getSpacing()[0] * factor, img.getSpacing()[1] * factor);
-		img2.setOrigin(img.getOrigin()[0] + img.getSpacing()[0] * (factor - 1)/2.0, img.getOrigin()[1] + img.getSpacing()[1] * (factor - 1)/2.0);
+		img2.setOrigin(-(img2.getSize()[0] - 1.0) * img2.getSpacing()[0]/2.0, -(img2.getSize()[1] - 1.0) * img2.getSpacing()[1]/2.0);
 		for(int i = 0; i < width; i++)
 			for(int j = 0; j < height; j++) {
 				val = 0; count = 0;
@@ -119,12 +107,6 @@ public class GenerateSuperResolutionTrainingImagesLR2 {
 		return img2;
 	}
 	
-	/**
-	 * 
-	 * @param img
-	 * @param factor
-	 * @return
-	 */
 	public Grid2D subsampling2(Grid2D img, int factor)
 	{
 		int width = (img.getWidth() - 1)/factor + 1;
@@ -140,54 +122,50 @@ public class GenerateSuperResolutionTrainingImagesLR2 {
 		return img2;
 	}
 	
-	/**
-	 * Upsampling using bicubic interpolation
-	 * @param imgInput
-	 * @param imgOutPut
-	 */
-	public void upsampling2(Grid2D imgInput, Grid2D imgOutPut)
+	public Grid2D upsampling(Grid2D img, int factor)
 	{
-		double[][] y = new double[imgInput.getHeight()][imgInput.getWidth()];
-		for(int j = 0; j < imgInput.getHeight(); j++)
-			for(int i = 0; i < imgInput.getWidth(); i++)
-				y[j][i] = (double)imgInput.getAtIndex(i, j);
+		double[][] y = new double[img.getHeight()][img.getWidth()];
+		for(int j = 0; j < img.getHeight(); j++)
+			for(int i = 0; i < img.getWidth(); i++)
+				y[j][i] = (double)img.getAtIndex(i, j);
 		
-		double[] x1 = new double[imgInput.getHeight()];
-		for(int i = 0; i < imgInput.getHeight(); i++)
+		double[] x1 = new double[img.getHeight()];
+		for(int i = 0; i < img.getHeight(); i++)
 		{
-			x1[i] = i * imgInput.getSpacing()[1] + imgInput.getOrigin()[1];
+			x1[i] = i * img.getSpacing()[1];
 		}
+		System.out.println(" ");
 		
-		double[] x2 = new double[imgInput.getWidth()];
-		for(int i = 0; i < imgInput.getWidth(); i++)
+		double[] x2 = new double[img.getWidth()];
+		for(int i = 0; i < img.getWidth(); i++)
 		{
-			x2[i] = i * imgInput.getSpacing()[0] + imgInput.getOrigin()[0];
+			x2[i] = i * img.getSpacing()[0];
 		}
+		System.out.println(" ");
 		
 		BiCubicInterpolation bci = new BiCubicInterpolation(x1, x2, y, 0);
 //		BiCubicSpline bci = new BiCubicSpline(x1, x2, y);
-		double x1Min = imgInput.getOrigin()[1];
-		double x1Max = imgInput.getOrigin()[1] + imgInput.getSpacing()[1] * (imgInput.getSize()[1] - 1);
-		double x2Min = imgInput.getOrigin()[0];
-		double x2Max = imgInput.getOrigin()[0] + imgInput.getSpacing()[0] * (imgInput.getSize()[0] - 1);
-		double[] xx1 = new double[imgOutPut.getHeight()];
+		Grid2D img2 = new Grid2D((img.getWidth() - 1) * factor + 1, (img.getHeight() - 1) * factor + 1);
+		img2.setSpacing(img.getSpacing()[0]/factor, img.getSpacing()[1]/factor);
+		img2.setOrigin(-(img2.getSize()[0] - 1.0) * img2.getSpacing()[0]/2.0, -(img2.getSize()[1] - 1.0) * img2.getSpacing()[1]/2.0);
 		
-		for(int i = 0; i < imgOutPut.getHeight(); i++)
-			xx1[i] = i * imgOutPut.getSpacing()[1] + imgOutPut.getOrigin()[1];
+		double[] xx1 = new double[img2.getHeight()];
+		for(int i = 0; i < img2.getHeight(); i++)
+			xx1[i] = i * img2.getSpacing()[1];
 
-		double[] xx2 = new double[imgOutPut.getWidth()];
-		for(int i = 0; i < imgOutPut.getWidth(); i++)
-			xx2[i] = i * imgOutPut.getSpacing()[0] + imgOutPut.getOrigin()[0];
 		
-		for(int i = 0; i < imgOutPut.getWidth(); i++)
-			for(int j = 0; j < imgOutPut.getHeight(); j++)
+		double[] xx2 = new double[img2.getWidth()];
+		for(int i = 0; i < img2.getWidth(); i++)
+			xx2[i] = i * img2.getSpacing()[0];
+		
+
+		for(int i = 0; i < img2.getWidth(); i++)
+			for(int j = 0; j < img2.getHeight(); j++)
 			{
-				if(xx1[j] < x1Min || xx1[j] > x1Max || xx2[i] < x2Min || xx2[i] > x2Max)
-					imgOutPut.setAtIndex(i, j, 0);
-				else
-					imgOutPut.setAtIndex(i, j, (float)(bci.interpolate(xx1[j], xx2[i])));
+				img2.setAtIndex(i, j, (float)(bci.interpolate(xx1[j], xx2[i])));
 			}
 		
+		return img2;
 	}
 	
 	

@@ -58,6 +58,7 @@ public class GenerateCelphaloFromCT {
 			celp.setOrigin(-(celp.getSize()[0] - 1.0) * celp.getSpacing()[0]/2.0, -(celp.getSize()[1] - 1.0) * celp.getSpacing()[1]/2.0);
 			obj.resampleCelp(celp, p2);
 			Grid2D mask = obj.getBackgroundMask(celp, 0.08f);
+			mask.show("mask");
 			celp.clone().show("celp" + idx);
 			Grid2D celp2 = obj.sigmoidTransform2(celp, 2.68f, 1);
 			celp2.clone().show("celpTahn2_" + idx);
@@ -221,13 +222,15 @@ public class GenerateCelphaloFromCT {
 	 * @param a
 	 * @return
 	 */
+	//original paramters 215 and 20
 	public Grid2D sigmoidTransform2(Grid2D img, float t, float a)
 	{
 		float val;
 		Grid2D img2 = new Grid2D(img.getWidth(), img.getHeight());
 		for(int i = 0; i < img.getSize()[0]; i++)
 			for(int j = 0; j < img.getSize()[1]; j++) {
-				val = (float)(215.0 / (1.0 + Math.exp(- a * ((double) img.getAtIndex(i, j) - t))) + 20);
+//				val = (float)(215.0 / (1.0 + Math.exp(- a * ((double) img.getAtIndex(i, j) - t))) + 20);
+				val = (float)(210.0 / (1.0 + Math.exp(- a * ((double) img.getAtIndex(i, j) - t))) + 40);
 				img2.setAtIndex(i, j, val);
 			}
 		
