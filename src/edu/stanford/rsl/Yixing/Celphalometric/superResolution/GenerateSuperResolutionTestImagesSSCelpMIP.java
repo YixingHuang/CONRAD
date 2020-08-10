@@ -10,7 +10,7 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import flanagan.interpolation.*;
 
-public class GenerateSuperResolutionTestImagesSSCelp {
+public class GenerateSuperResolutionTestImagesSSCelpMIP {
 	/**
 	 * generate up-sampled images for test cephalograms
 	 * Keep the original size of low resolutions
@@ -20,9 +20,9 @@ public class GenerateSuperResolutionTestImagesSSCelp {
 	 */
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		GenerateSuperResolutionTestImagesSSCelp obj = new GenerateSuperResolutionTestImagesSSCelp();
-		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
-		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
+		GenerateSuperResolutionTestImagesSSCelpMIP obj = new GenerateSuperResolutionTestImagesSSCelpMIP();
+		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\MIP\\";
+		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\MIP\\";
 		String name;
 		ImagePlus imp;
 		Grid2D gt;
@@ -43,8 +43,8 @@ public class GenerateSuperResolutionTestImagesSSCelp {
 		double[] spacing1 = new double[] {0.1, 0.1};
 		us.setSpacing(spacing1);
 		us.setOrigin(-(width - 1.0) * spacing1[1]/2.0, -(height - 1.0) * spacing1[1]/2.0);
-		for(int idx = 0; idx <=4; idx ++) {
-			name = path + "qq" + idx + ".png";
+		for(int idx = 4; idx <=4; idx ++) {
+			name = path + "MIP_50_" + idx + ".png";
 			imp = IJ.openImage(name);
 			gt = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
 			gt.setSpacing(spacing0);
@@ -53,7 +53,7 @@ public class GenerateSuperResolutionTestImagesSSCelp {
 			obj.upsampling2(gt, us);
 			us.clone().show("us");
 			imp = ImageUtil.wrapGrid(us, null);
-			imgNameIn2 = savePath + "qs" + idx + ".png";
+			imgNameIn2 = savePath + "MIP_50s_" + idx + ".png";
 			imp.setDisplayRange(0, 255);
 			IJ.saveAs(imp, "png", imgNameIn2);
 			

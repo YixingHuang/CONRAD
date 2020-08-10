@@ -15,12 +15,12 @@ public class GenerateTestPatchesLROverlap {
 		new ImageJ();
 		boolean isPix = false;
 		GenerateTestPatchesLROverlap obj = new GenerateTestPatchesLROverlap();
-		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\";
+		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
 		String savePath;
 		if(isPix)
 			savePath = "D:\\Pix2pix\\tools\\superResolution\\testCelp\\";
 		else
-			savePath = "D:\\imageSuperResolutionV2_1\\low_res\\testCelp\\";
+			savePath = "D:\\imageSuperResolutionV2_1\\low_res\\testCelpSoft\\";
 		
 		String saveName;
 		ImagePlus imp;
