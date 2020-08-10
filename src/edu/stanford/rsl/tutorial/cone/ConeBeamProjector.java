@@ -75,8 +75,8 @@ public class ConeBeamProjector {
 
 	public ConeBeamProjector() {
 		configure();
-//		initCL2();
-		initCL();
+		initCL2();
+//		initCL();
 	}
 	
 	private void initCL(){
