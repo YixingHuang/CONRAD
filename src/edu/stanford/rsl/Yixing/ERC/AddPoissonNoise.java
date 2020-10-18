@@ -1,4 +1,4 @@
-package edu.stanford.rsl.Yixing.Siemens;
+package edu.stanford.rsl.Yixing.ERC;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -7,7 +7,6 @@ import edu.stanford.rsl.conrad.data.numeric.Grid2D;
 import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 import edu.stanford.rsl.conrad.data.numeric.opencl.OpenCLGrid3D;
 import edu.stanford.rsl.conrad.geometry.trajectories.Trajectory;
-import edu.stanford.rsl.conrad.numerics.SimpleVector;
 import edu.stanford.rsl.conrad.phantom.NumericalSheppLogan3D;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
 import edu.stanford.rsl.tutorial.fan.CosineFilter;
@@ -23,7 +22,7 @@ import edu.stanford.rsl.conrad.filtering.redundancy.ParkerWeightingTool;
 import edu.stanford.rsl.tutorial.weightedtv.TVOpenCLGridOperators;
 import edu.stanford.rsl.Yixing.truncation.WaterCylinderExtrapolation2DFan;
 
-public class ReconstructionOfSiemensData {
+public class AddPoissonNoise {
 	public int factor = 2; //image size factor
 	protected int maxProjs;
 	public int imgSizeX;
@@ -43,72 +42,43 @@ public class ReconstructionOfSiemensData {
 	
 	public OpenCLGrid3D sinoCL, volCL, reconCL, artifactCL;
 	public Grid3D sinogram;
-//	private String sinoPath = "E:\\SiemensMarkerData\\projections\\projection1.tif";
-	private String sinoPath = "E:\\SiemensMarkerData\\Water\\projectionPadded180.tif";
 	
 	public static void main(String[] args) throws Exception {
 		new ImageJ();
 		
-		ReconstructionOfSiemensData obj = new ReconstructionOfSiemensData(); 
-		obj.initialGeometry();
+		String path = "E:\\Lasse\\BVM\\projection1.tif"; //path for wTV data
+
+		String savePath = "E:\\Lasse\\BVM\\";
+		String saveName1;
+		AddPoissonNoise obj = new AddPoissonNoise(); 
+
 
 		
-	
+		//Grid3D img = obj.getOriginalGroundTruthData(path, 7);
+		//img.clone().show("img");
 		
-		ImagePlus imp1, imp2;
-		boolean isNoisy = false;
-		float numTrunc = 185;
-		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
-		WaterCylinderExtrapolation2DFan wceObj = new WaterCylinderExtrapolation2DFan(obj.height, (int)numTrunc);
-		Grid2D tempSino;
-		for(int i = 1; i <= 1; i++){
+		ImagePlus imp1;
 
-			obj.cbp=new ConeBeamProjector();
-			obj.cbbp=new ConeBeamBackprojector();
+		boolean isNoisy = true;
 
-			obj.loadMeasuredSinogram();
-//			op.truncateProjections(obj.sinoCL, numTrunc);
-//			obj.sinogram = new Grid3D(obj.sinoCL);
-//			obj.sinoCL.release();
-//			if(isNoisy)
-//				obj.addPoissonNoise3D(obj.sinogram);
-			
-//			for(int projIdx = 0; projIdx < 1; projIdx++)
-			for(int projIdx = 0; projIdx < obj.sinogram.getSize()[2]; projIdx++)
-			{
-				tempSino = wceObj.run2DWaterCylinderExtrapolation(obj.sinogram.getSubGrid(projIdx));
-				obj.sinogram.setSubGrid(projIdx, tempSino);
-				System.out.print(projIdx + " ");
-			}
-			System.out.println(" ");
-			
-
-			obj.sinogram.clone().show("sinogram");
-		    
 	
-			obj.FDKReconstruction(obj.sinogram);
+		imp1 = IJ.openImage(path);
+		obj.sinogram = ImageUtil.wrapImagePlus(imp1);
+		
+		if(isNoisy)
+			obj.addPoissonNoise3D(obj.sinogram);
+		
 
+	    
 
+		imp1 = ImageUtil.wrapGrid(obj.sinogram, null);
+		saveName1 = savePath + "projectionNoisy8.tif";
+	    IJ.saveAs(imp1, "Tiff", saveName1);
 			
-			System.out.println(i);
-			
-		}
+
+	
+		System.out.println("finished");
     }
-	
-	private void loadMeasuredSinogram()
-	{
-		ImagePlus imp0 =IJ.openImage(sinoPath);
-		sinogram = ImageUtil.wrapImagePlus(imp0);
-	
-	}
-
-	public void getMeasuredSinoCL() throws Exception {
-		sinoCL = new OpenCLGrid3D(new Grid3D(width, height, maxProjs));
-		sinoCL.getDelegate().prepareForDeviceOperation();
-		cbp.fastProjectRayDrivenCL(sinoCL, volCL);
-		//sinoCL.show("sinoCL");
-	}
-	
 	
 	private void addTumors(Grid3D gtImages){
 		float tumor = 0.1f * 0.07f;
@@ -123,18 +93,7 @@ public class ReconstructionOfSiemensData {
 		}
 	}
 	
-	private void addTumors2(Grid3D gtImages){
-		float tumor = 200.f;
-		int xcent = 230, ycent = 95;
-		for(int i = -5; i <=5; i++){
-			for(int j = -5; j <= 5; j ++){
-				for(int k = 0; k < gtImages.getSize()[2]; k++){
-					if((i-0.5)*(i-0.5)+(j-0.5)*(j-0.5)<= 25)
-						gtImages.setAtIndex(xcent + i , ycent + j, k, gtImages.getAtIndex(xcent+i, ycent+j, k) + tumor);
-				}
-			}
-		}
-	}
+
 	
 	private void addPoissonNoise3D(Grid3D sinogram) throws Exception{
 		for(int i = 0; i < sinogram.getSize()[2]; i++){
@@ -144,16 +103,29 @@ public class ReconstructionOfSiemensData {
 	
 	private void addPoissonNoise(Grid2D sinogram) throws Exception{
 		//Grid2D noise = new Grid2D(sinogram);
-
-		float photonNumber = 1.e5f;
+		float diameter_ROI = 350;
+		float width_detector = diameter_ROI * 1.34f * 2.5f/2.0f; // the width of the ROI on the detector
+		float leftCollimator = (2000 - width_detector)/2.0f; //748.75
+		float rightCollimator = leftCollimator + width_detector; //1251.25
+		
+		//ROI = 300; leftCollimator = 748.75; rightCollimator  = 1251.25;
+		//ROI = 350; left = 706.875;
+		
+		//System.out.println(leftCollimator + " " + rightCollimator);
+		float photonNumber = 5.e6f;
+		float alpha = 0.01f;
+		float photonNumber2 = photonNumber * alpha;
 		double val;
-		float amp = 2.f;//transfer the intensity to linear attenuation coefficient, water 0.02/mm, pixel size 0.5mm
+		float amp = 1.6e4f;//mm to micro meter  6.0e-5f;
 		sinogram.getGridOperator().divideBy(sinogram, amp);
 		Grid2D I = new Grid2D(sinogram.getWidth(), sinogram.getHeight());
 		for (int i = 0; i < sinogram.getWidth(); i ++)
 			for(int j = 0; j < sinogram.getHeight(); j++)
 			{
-				val = photonNumber * Math.pow(Math.E, -sinogram.getAtIndex(i, j));
+				if( i > leftCollimator && i < rightCollimator)
+					val = photonNumber2 * Math.pow(Math.E, -sinogram.getAtIndex(i, j));
+				else
+					val = photonNumber * Math.pow(Math.E, -sinogram.getAtIndex(i, j));
 				I.setAtIndex(i, j, (float)(val));
 			}
 		
@@ -162,9 +134,11 @@ public class ReconstructionOfSiemensData {
 		for (int i = 0; i < sinogram.getWidth(); i ++)
 			for(int j = 0; j < sinogram.getHeight(); j++)
 			{
-				val = - Math.log(I.getAtIndex(i, j)/photonNumber);
+				if( i > leftCollimator && i < rightCollimator)
+					val = - Math.log(I.getAtIndex(i, j)/photonNumber2);
+				else
+					val = - Math.log(I.getAtIndex(i, j)/photonNumber);
 				sinogram.setAtIndex(i, j, (float)(val>=0?val:0));
-			
 			}
 		sinogram.getGridOperator().multiplyBy(sinogram, amp);
 		
@@ -180,11 +154,7 @@ public class ReconstructionOfSiemensData {
 		geo = conf.getGeometry();
 		width = geo.getDetectorWidth();
 		height = geo.getDetectorHeight();
-		SimpleVector spacingUV = new SimpleVector(geo.getPixelDimensionX(), geo.getPixelDimensionY());
-		double[] SDD = geo.getProjectionMatrix(0).computeSourceToDetectorDistance(spacingUV);
-		System.out.println("SDD[0] = " + SDD[0] + "SDD[1] = " + SDD[1]);
-		geo.setSourceToDetectorDistance(1166.82);
-		geo.setSourceToAxisDistance(780);
+		
 		// create context
 		maxProjs = geo.getProjectionStackSize();
 		imgSizeX = geo.getReconDimensionX();
@@ -205,27 +175,26 @@ public class ReconstructionOfSiemensData {
 		double deltaV = geo.getPixelDimensionY();
 		int numProjs = geo.getNumProjectionMatrices();	
 		Grid3D sinogram2=new Grid3D(sinogram.getSize()[0],sinogram.getSize()[1], numProjs);
-		sinogram.setSpacing(sinogram.getSpacing());
 		ConeBeamCosineFilter cbFilter = new ConeBeamCosineFilter(focalLength, width, height, deltaU, deltaV);
 		RamLakKernel ramK = new RamLakKernel(width, deltaU);
-		ParkerWeightingTool parker = new ParkerWeightingTool(geo);
+		//ParkerWeightingTool parker = new ParkerWeightingTool(geo);
 		for (int i = 0; i < numProjs; ++i) 
 			
 		{
-//			parker.setImageIndex(i);
-//			parker.applyToolToImage(sinogram2.getSubGrid(i));
-			System.out.print(i + " ");
+			//parker.setImageIndex(i);
+			//parker.applyToolToImage(sinogram2.getSubGrid(i));
+		
 			sinogram2.setSubGrid(i, (Grid2D) sinogram.getSubGrid(i).clone());
 			cbFilter.applyToGrid(sinogram2.getSubGrid(i));
 			//ramp
 			for (int j = 0;j <height; ++j)
 				ramK.applyToGrid(sinogram2.getSubGrid(i).getSubGrid(j));
-		
+			System.out.print(i + " ");
 		}
 		System.out.println(" ");
 		
 		Grid3D reconFDK = cbbp.backprojectPixelDrivenCL(sinogram2);
-		reconFDK.show("FDK recon");
+		reconCL= new OpenCLGrid3D(reconFDK);
 		//float scalCorrection = (float)( 260/(34.5*720000));
 		//reconCL.getGridOperator().multiplyBy(reconCL, scalCorrection);
 		//reconFDK = new Grid3D(reconCL);
@@ -233,7 +202,12 @@ public class ReconstructionOfSiemensData {
 		
 	}
 	
-
+	public void getMeasuredSinoCL() throws Exception {
+		sinoCL = new OpenCLGrid3D(new Grid3D(width, height, maxProjs));
+		sinoCL.getDelegate().prepareForDeviceOperation();
+		cbp.fastProjectRayDrivenCL(sinoCL, volCL);
+		//sinoCL.show("sinoCL");
+	}
 	
 	
 	private void reloadImages(String path3DGrids,Grid3D fullRecons, Grid3D limitedRecons, Grid3D artifacts){
@@ -248,22 +222,34 @@ public class ReconstructionOfSiemensData {
 		fullRecons.getGridOperator().copy(fullRecons, temp);
 	}
 	
-	public Grid3D getGroundTruthData(String path, int ii, boolean isTumor){
-		String pathTemp;
+//	public Grid3D getGroundTruthData(String path, int ii, boolean isTumor){
+//		String pathTemp;
+//		ImagePlus imp;
+//		Grid3D gtImages = new Grid3D(256, 256, 256);
+//		Grid3D imgTemp;
+//		pathTemp = path + ii + ".tif";
+//		imp=IJ.openImage(pathTemp);
+//		imgTemp = ImageUtil.wrapImagePlus(imp);
+//		if(isTumor)
+//			addTumors2(imgTemp);
+//		for(int j = 0; j < gtImages.getSize()[2]; j ++)
+//		{
+//				gtImages.setSubGrid(j, downSampling(imgTemp.getSubGrid(j)));
+//		}
+//
+//		return gtImages;
+//	}
+	
+	public Grid3D getGroundTruthData(String path, int ii){
+
 		ImagePlus imp;
-		Grid3D gtImages = new Grid3D(256, 256, 256);
 		Grid3D imgTemp;
-		pathTemp = path + ii + ".tif";
+		String pathTemp = path + ii + ".tif";
 		imp=IJ.openImage(pathTemp);
 		imgTemp = ImageUtil.wrapImagePlus(imp);
-		if(isTumor)
-			addTumors2(imgTemp);
-		for(int j = 0; j < gtImages.getSize()[2]; j ++)
-		{
-				gtImages.setSubGrid(j, downSampling(imgTemp.getSubGrid(j)));
-		}
+		
 
-		return gtImages;
+		return imgTemp;
 	}
 	
 	public Grid3D getOriginalGroundTruthData(String path, int ii){

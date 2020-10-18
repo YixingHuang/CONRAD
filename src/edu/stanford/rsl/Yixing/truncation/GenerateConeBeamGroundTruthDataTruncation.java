@@ -58,12 +58,12 @@ public class GenerateConeBeamGroundTruthDataTruncation {
 		
 		ImagePlus imp1, imp2;
 		boolean isTumor = false;
-		boolean isNoisy = true;
+		boolean isNoisy = false;
 		float numTrunc = 350;
 		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
 		WaterCylinderExtrapolation2DFan wceObj = new WaterCylinderExtrapolation2DFan(obj.height, (int)numTrunc);
 		Grid2D tempSino;
-		for(int i = 1; i <= 17; i++){
+		for(int i = 1; i <= 1; i++){
 		//int i = 1;
 			obj.cbp=new ConeBeamProjector();
 			obj.cbbp=new ConeBeamBackprojector();

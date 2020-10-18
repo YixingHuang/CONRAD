@@ -17,11 +17,11 @@ import edu.stanford.rsl.conrad.utils.DoubleArrayUtil;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
 
 public class ZeroPaddingProjections {
-	private int numTrunc = 100;
+	private int numTrunc = 180;
 	
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		String sinoPath = "E:\\SiemensMarkerData\\projection.tif";
+		String sinoPath = "E:\\SiemensMarkerData\\Water\\projection.tif";
 		ImagePlus imp0 =IJ.openImage(sinoPath);
 		Grid3D sinogram = ImageUtil.wrapImagePlus(imp0);
 		ZeroPaddingProjections obj = new ZeroPaddingProjections();
@@ -33,7 +33,7 @@ public class ZeroPaddingProjections {
 					sinogram2.setAtIndex(i + obj.numTrunc, j, k, sinogram.getAtIndex(i, j, k));
 				}
 		
-		String savePath = "E:\\SiemensMarkerData\\projectionPadded.tif";
+		String savePath = "E:\\SiemensMarkerData\\Water\\projectionPadded180.tif";
 		imp0 = ImageUtil.wrapGrid(sinogram2, null);
 		IJ.saveAs(imp0, "Tiff", savePath);
 		System.out.println("Done!");

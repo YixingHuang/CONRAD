@@ -10,18 +10,12 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import flanagan.interpolation.*;
 
-public class GenerateTestPatchesLROverlap {
+public class GenerateHRTestImages {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		boolean isPix = false;
-		GenerateTestPatchesLROverlap obj = new GenerateTestPatchesLROverlap();
-		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
-		String savePath;
-		if(isPix)
-			savePath = "D:\\Pix2pix\\tools\\superResolution\\testCelp\\";
-		else
-			savePath = "D:\\imageSuperResolutionV2_1\\low_res\\testCelpSoft\\";
-		
+		GenerateHRTestImages obj = new GenerateHRTestImages();
+		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\RayCast\\";
+		String savePath = "D:\\Pix2pix\\tools\\superResolution\\test3\\";
 		String saveName;
 		ImagePlus imp;
 		Grid2D ds, us, input, output;
@@ -29,49 +23,23 @@ public class GenerateTestPatchesLROverlap {
 		int startX, startY;
 		int saveId = 1;
 		Grid2D patchIn, patchOut, merge;
-		int sz = 64;
+		int sz = 512;
 		
 		patchIn = new Grid2D(sz, sz);
 		patchOut = new Grid2D(sz, sz);
-		for(int idx = 0; idx <= 0; idx ++) {
-			imgNameIn = path + "p" + idx + ".png";
+		for(int idx = 0; idx <= 4; idx ++) {
+			imgNameIn = path + "RayCast" + idx + ".png";
 			imp = IJ.openImage(imgNameIn);
-			us = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-//            for(int i = 0; i <= 16; i++) {
-//            	for(int j = 0; j <= 16; j++ ) {
-//            		startX = i * 32;
-//            		startY = j * 32;
-//					saveId = idx * 10000 + j * 100 + i;
-            for(int i = 7; i <= 7; i++) {
-            	for(int j = 12; j <= 12; j++ ) {
-            		startX = i * 32 + 6;
-            		startY = j * 32 + 25;
-            		saveId = 10000 + j * 100 + i;
-            		for(int x = 0; x < sz; x++) {
-            			for(int y = 0; y < sz; y++)
-            			{
-            				if((startX + x >= us.getSize()[0]) || (startY + y >= us.getSize()[1]))
-            					patchIn.setAtIndex(x, y, 0);
-            				else
-            					patchIn.setAtIndex(x, y, us.getAtIndex(startX + x, startY + y));
-            			}
-            		}
-            		patchOut = (Grid2D)patchIn.clone();
-            		merge = obj.mergeImages(patchIn, patchOut);
-            		saveName = savePath + saveId + ".png";
-            		if(isPix)
-            			imp = ImageUtil.wrapGrid(merge, null);
-            		else
-            		{
-            			imp = ImageUtil.wrapGrid(patchIn, null);
-            			imp.setDisplayRange(0, 255);
-            			IJ.run(imp, "RGB Color", "");
-            		}
-            		imp.setDisplayRange(0, 255);
-            		IJ.saveAs(imp, "png", saveName);
-            		
-            	}
-            }
+			ds = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
+			ds.setSpacing(0.5, 0.5);
+			ds.setOrigin(-(ds.getSize()[0] - 1.0) * ds.getSpacing()[0]/2.0, -(ds.getSize()[1] - 1.0) * ds.getSpacing()[1]/2.0);
+			us = obj.upsampling(ds, 5);
+			us.clone().show("us");
+			saveName = path + "s" + idx + ".png";
+			imp = ImageUtil.wrapGrid(us, null);
+			imp.setDisplayRange(0, 255);
+    		IJ.saveAs(imp, "png", saveName);
+            
             System.out.print(idx + " ");
 		}
 	}

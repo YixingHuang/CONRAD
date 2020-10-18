@@ -19,15 +19,15 @@ public class SplitIntoSlices {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
-		String path = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\recon\\";
-		String path2 = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\trainingData_d102\\";
+		String path = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\recon\\";
+		String path2 = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\trainingData_d10\\";
 		String path3;
 		ImagePlus imp1, imp2;
 		String name1, name2, saveName1, saveName2;
 		Grid3D data, mask;
 		Grid2D data2D, mask2D;
 		int saveIndex, getIndex;
-		for(int idx = 18; idx<= 18; idx ++){
+		for(int idx = 19; idx<= 19; idx ++){
 			name1 = path + "reconLimited" + idx + ".tif";
 			name2 = path + "reconGT" + idx + ".tif";
 			//name2 = path + "artifacts" + idx + ".tif";

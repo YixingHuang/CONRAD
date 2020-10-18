@@ -1,4 +1,4 @@
-package edu.stanford.rsl.Yixing.Siemens;
+package edu.stanford.rsl.Yixing.truncationNew;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -7,7 +7,6 @@ import edu.stanford.rsl.conrad.data.numeric.Grid2D;
 import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 import edu.stanford.rsl.conrad.data.numeric.opencl.OpenCLGrid3D;
 import edu.stanford.rsl.conrad.geometry.trajectories.Trajectory;
-import edu.stanford.rsl.conrad.numerics.SimpleVector;
 import edu.stanford.rsl.conrad.phantom.NumericalSheppLogan3D;
 import edu.stanford.rsl.conrad.utils.ImageUtil;
 import edu.stanford.rsl.tutorial.fan.CosineFilter;
@@ -23,7 +22,7 @@ import edu.stanford.rsl.conrad.filtering.redundancy.ParkerWeightingTool;
 import edu.stanford.rsl.tutorial.weightedtv.TVOpenCLGridOperators;
 import edu.stanford.rsl.Yixing.truncation.WaterCylinderExtrapolation2DFan;
 
-public class ReconstructionOfSiemensData {
+public class GenerateConeBeamGroundTruthDataTruncation {
 	public int factor = 2; //image size factor
 	protected int maxProjs;
 	public int imgSizeX;
@@ -43,38 +42,48 @@ public class ReconstructionOfSiemensData {
 	
 	public OpenCLGrid3D sinoCL, volCL, reconCL, artifactCL;
 	public Grid3D sinogram;
-//	private String sinoPath = "E:\\SiemensMarkerData\\projections\\projection1.tif";
-	private String sinoPath = "E:\\SiemensMarkerData\\Water\\projectionPadded180.tif";
 	
 	public static void main(String[] args) throws Exception {
 		new ImageJ();
 		
-		ReconstructionOfSiemensData obj = new ReconstructionOfSiemensData(); 
+		String path = "D:\\wTVprocessedData\\"; //path for wTV data
+		String pathRecon = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\recon\\";
+		String savePath = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\projections\\";
+		String saveName1;
+		GenerateConeBeamGroundTruthDataTruncation obj = new GenerateConeBeamGroundTruthDataTruncation(); 
 		obj.initialGeometry();
-
+		OpenCLGrid3D recon_no_leison;
 		
-	
+		//Grid3D img = obj.getOriginalGroundTruthData(path, 7);
+		//img.clone().show("img");
 		
 		ImagePlus imp1, imp2;
+		boolean isTumor = false;
 		boolean isNoisy = false;
-		float numTrunc = 185;
+		float numTrunc = 350;
 		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
 		WaterCylinderExtrapolation2DFan wceObj = new WaterCylinderExtrapolation2DFan(obj.height, (int)numTrunc);
 		Grid2D tempSino;
-		for(int i = 1; i <= 1; i++){
-
+		for(int i = 19; i <= 19; i++){
+		//int i = 1;
 			obj.cbp=new ConeBeamProjector();
 			obj.cbbp=new ConeBeamBackprojector();
-
-			obj.loadMeasuredSinogram();
-//			op.truncateProjections(obj.sinoCL, numTrunc);
-//			obj.sinogram = new Grid3D(obj.sinoCL);
-//			obj.sinoCL.release();
-//			if(isNoisy)
-//				obj.addPoissonNoise3D(obj.sinogram);
+			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i, isTumor));
+			obj.rescaleData(obj.volCL);
+			recon_no_leison = new OpenCLGrid3D(obj.volCL);
+			//obj.addTumors(obj.volCL);
+			//obj.volCL.clone().show("volCL");
+			obj.volCL.setSpacing(1.25, 1.25, 1);
+			obj.volCL.setOrigin(obj.geo.getOriginX(), obj.geo.getOriginY(), obj.geo.getOriginZ());
 			
-//			for(int projIdx = 0; projIdx < 1; projIdx++)
-			for(int projIdx = 0; projIdx < obj.sinogram.getSize()[2]; projIdx++)
+			obj.getMeasuredSinoCL();
+			op.truncateProjections(obj.sinoCL, numTrunc);
+			obj.sinogram = new Grid3D(obj.sinoCL);
+			obj.sinoCL.release();
+			if(isNoisy)
+				obj.addPoissonNoise3D(obj.sinogram);
+			
+			for(int projIdx = 0; projIdx < obj.maxProjs; projIdx++)
 			{
 				tempSino = wceObj.run2DWaterCylinderExtrapolation(obj.sinogram.getSubGrid(projIdx));
 				obj.sinogram.setSubGrid(projIdx, tempSino);
@@ -83,32 +92,30 @@ public class ReconstructionOfSiemensData {
 			System.out.println(" ");
 			
 
-			obj.sinogram.clone().show("sinogram");
+			//obj.sinogram.clone().show("sinogram");
 		    
-	
+
+			imp1 = ImageUtil.wrapGrid(obj.sinogram, null);
+			saveName1 = savePath + "projection" +i + ".tif";
+		    IJ.saveAs(imp1, "Tiff", saveName1);
+			
 			obj.FDKReconstruction(obj.sinogram);
-
-
+			obj.artifactCL = new OpenCLGrid3D(obj.reconCL);
+			//obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, obj.volCL);
+			obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, recon_no_leison);
+			obj.volCL.getGridOperator().divideBy(obj.volCL, 0.07f);
+			obj.reconCL.getGridOperator().divideBy(obj.reconCL, 0.07f);
+			obj.artifactCL.getGridOperator().divideBy(obj.artifactCL, 0.07f);
+			obj.saveTrainingData(pathRecon, obj.volCL, obj.reconCL, obj.artifactCL, i);
+			//obj.saveFullReconData(pathRecon, obj.reconCL, i);
+			obj.volCL.release();
+			obj.reconCL.release();
+			obj.artifactCL.release();
 			
 			System.out.println(i);
 			
 		}
     }
-	
-	private void loadMeasuredSinogram()
-	{
-		ImagePlus imp0 =IJ.openImage(sinoPath);
-		sinogram = ImageUtil.wrapImagePlus(imp0);
-	
-	}
-
-	public void getMeasuredSinoCL() throws Exception {
-		sinoCL = new OpenCLGrid3D(new Grid3D(width, height, maxProjs));
-		sinoCL.getDelegate().prepareForDeviceOperation();
-		cbp.fastProjectRayDrivenCL(sinoCL, volCL);
-		//sinoCL.show("sinoCL");
-	}
-	
 	
 	private void addTumors(Grid3D gtImages){
 		float tumor = 0.1f * 0.07f;
@@ -180,11 +187,7 @@ public class ReconstructionOfSiemensData {
 		geo = conf.getGeometry();
 		width = geo.getDetectorWidth();
 		height = geo.getDetectorHeight();
-		SimpleVector spacingUV = new SimpleVector(geo.getPixelDimensionX(), geo.getPixelDimensionY());
-		double[] SDD = geo.getProjectionMatrix(0).computeSourceToDetectorDistance(spacingUV);
-		System.out.println("SDD[0] = " + SDD[0] + "SDD[1] = " + SDD[1]);
-		geo.setSourceToDetectorDistance(1166.82);
-		geo.setSourceToAxisDistance(780);
+		
 		// create context
 		maxProjs = geo.getProjectionStackSize();
 		imgSizeX = geo.getReconDimensionX();
@@ -205,27 +208,26 @@ public class ReconstructionOfSiemensData {
 		double deltaV = geo.getPixelDimensionY();
 		int numProjs = geo.getNumProjectionMatrices();	
 		Grid3D sinogram2=new Grid3D(sinogram.getSize()[0],sinogram.getSize()[1], numProjs);
-		sinogram.setSpacing(sinogram.getSpacing());
 		ConeBeamCosineFilter cbFilter = new ConeBeamCosineFilter(focalLength, width, height, deltaU, deltaV);
 		RamLakKernel ramK = new RamLakKernel(width, deltaU);
 		ParkerWeightingTool parker = new ParkerWeightingTool(geo);
 		for (int i = 0; i < numProjs; ++i) 
 			
 		{
-//			parker.setImageIndex(i);
-//			parker.applyToolToImage(sinogram2.getSubGrid(i));
-			System.out.print(i + " ");
+			parker.setImageIndex(i);
+			parker.applyToolToImage(sinogram2.getSubGrid(i));
+		
 			sinogram2.setSubGrid(i, (Grid2D) sinogram.getSubGrid(i).clone());
 			cbFilter.applyToGrid(sinogram2.getSubGrid(i));
 			//ramp
 			for (int j = 0;j <height; ++j)
 				ramK.applyToGrid(sinogram2.getSubGrid(i).getSubGrid(j));
-		
+			System.out.print(i + " ");
 		}
 		System.out.println(" ");
 		
 		Grid3D reconFDK = cbbp.backprojectPixelDrivenCL(sinogram2);
-		reconFDK.show("FDK recon");
+		reconCL= new OpenCLGrid3D(reconFDK);
 		//float scalCorrection = (float)( 260/(34.5*720000));
 		//reconCL.getGridOperator().multiplyBy(reconCL, scalCorrection);
 		//reconFDK = new Grid3D(reconCL);
@@ -233,7 +235,12 @@ public class ReconstructionOfSiemensData {
 		
 	}
 	
-
+	public void getMeasuredSinoCL() throws Exception {
+		sinoCL = new OpenCLGrid3D(new Grid3D(width, height, maxProjs));
+		sinoCL.getDelegate().prepareForDeviceOperation();
+		cbp.fastProjectRayDrivenCL(sinoCL, volCL);
+		//sinoCL.show("sinoCL");
+	}
 	
 	
 	private void reloadImages(String path3DGrids,Grid3D fullRecons, Grid3D limitedRecons, Grid3D artifacts){
@@ -306,12 +313,12 @@ public class ReconstructionOfSiemensData {
 	public void saveTrainingData(String path, Grid3D reconGT, Grid3D reconLimited, Grid3D artifacts, int index){
 		ImagePlus imp1,imp2, imp3;
 		
-//			imp1 = ImageUtil.wrapGrid(reconGT, null);
-//			IJ.saveAs(imp1, "Tiff", (path + "reconGT" + index + ".tif"));
+			imp1 = ImageUtil.wrapGrid(reconGT, null);
+			IJ.saveAs(imp1, "Tiff", (path + "reconGT" + index + ".tif"));
 			imp2 = ImageUtil.wrapGrid(reconLimited, null);
 			IJ.saveAs(imp2, "Tiff", (path + "reconTruncated" + index + ".tif"));
-//			imp3 = ImageUtil.wrapGrid(artifacts, null);
-//			IJ.saveAs(imp3, "Tiff", (path + "artifacts" + index + ".tif"));
+			imp3 = ImageUtil.wrapGrid(artifacts, null);
+			IJ.saveAs(imp3, "Tiff", (path + "artifacts" + index + ".tif"));
 		
 		
 	}

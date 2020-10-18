@@ -2,13 +2,16 @@ package edu.stanford.rsl.tutorial.differentiatebackprojection;
 
 import edu.stanford.rsl.conrad.data.numeric.Grid1D;
 import edu.stanford.rsl.conrad.data.numeric.Grid2D;
+import edu.stanford.rsl.conrad.utils.ImageUtil;
 import edu.stanford.rsl.tutorial.filters.RamLakKernel;
 import edu.stanford.rsl.tutorial.parallel.ParallelBackprojector2D;
 import edu.stanford.rsl.tutorial.parallel.ParallelProjector2D;
 import edu.stanford.rsl.tutorial.phantoms.DotsGrid2D;
 import edu.stanford.rsl.tutorial.phantoms.Phantom;
 import edu.stanford.rsl.tutorial.phantoms.SheppLogan;
+import ij.IJ;
 import ij.ImageJ;
+import ij.ImagePlus;
 
 /**
  * This is a simple demonstration of DBP
@@ -29,14 +32,19 @@ public class ParallelDbpReconExample {
 		
 		dbpOperators dbpOp = new dbpOperators(x, y, xSpacing, ySpacing);
 		// Create a phantom
-		Phantom phan = new SheppLogan(x, false);
-		//phan = new UniformCircleGrid2D(x, y);
-		//phan = new MickeyMouseGrid2D(x, y);
+//		Phantom phan = new SheppLogan(x, false);
+//		//phan = new UniformCircleGrid2D(x, y);
+//		//phan = new MickeyMouseGrid2D(x, y);
+
+		String gtPath = "C:\\Users\\Yixing Huang\\Desktop\\3420RawImage.tif";
+		ImagePlus imp = IJ.openImage(gtPath);
+		Grid2D phan = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
+		phan = obj.transposeImage(phan);
 		phan.setSpacing(xSpacing, ySpacing);
 		phan.show("The Phantom");
 		
 		// Project forward parallel
-		ParallelProjector2D projector = new ParallelProjector2D(2* Math.PI, Math.PI/180.0, 400, 1);
+		ParallelProjector2D projector = new ParallelProjector2D(2* Math.PI, Math.PI/180.0, 408, 1);
 		Grid2D sinogram = projector.projectRayDrivenCL(phan);
 		sinogram.show("The Sinogram");
 		Grid2D filteredSinogram = new Grid2D(sinogram);
@@ -57,7 +65,7 @@ public class ParallelDbpReconExample {
 		Grid2D sino1 = new Grid2D(sinoCopy);
 		Grid2D sino2 = new Grid2D(sinoCopy);
 		
-		int startAngle = 0;
+		int startAngle = 180;
 		for(int theta = 0; theta < startAngle; theta++ )
 		{
 			sino1.getSubGrid(theta).getGridOperator().fill(sino1.getSubGrid(theta), 0);
@@ -92,6 +100,13 @@ public class ParallelDbpReconExample {
 			reconDBP2.setSubGrid(row, dbpOp.WeightedHilbertTransform(reconDBP2.getSubGrid(row)));
 		}
 		reconDBP2.clone().show("DBP2 IHT");
+		
+		
+		
+		dbpOp.weightedHilbertTranform2DVertical(reconDBP);
+		reconDBP.clone().show("DBPN");
+		
+		
 	}
 	
 	Grid1D differentiatedProjection1D(Grid1D proj) {
@@ -101,6 +116,24 @@ public class ParallelDbpReconExample {
 			dproj.setAtIndex(i, proj.getAtIndex(i + 1) - proj.getAtIndex(i));
 		}
 		return dproj;
+	}
+	
+	Grid2D transposeImage(Grid2D img) {
+		Grid2D imgT = new Grid2D(img.getHeight(), img.getWidth());
+		for(int i = 0; i < img.getWidth(); i++)
+			for(int j = 0; j < img.getHeight(); j++)
+				imgT.setAtIndex(j, i, img.getAtIndex(i, j));
+		
+		return imgT;
+	}
+	
+	Grid2D flipImageHorizontal(Grid2D img) {
+		Grid2D imgT = new Grid2D(img.getHeight(), img.getWidth());
+		for(int i = 0; i < img.getWidth(); i++)
+			for(int j = 0; j < img.getHeight(); j++)
+				imgT.setAtIndex(img.getWidth() - 1 - i, j, img.getAtIndex(i, j));
+		
+		return imgT;
 	}
 	
 }

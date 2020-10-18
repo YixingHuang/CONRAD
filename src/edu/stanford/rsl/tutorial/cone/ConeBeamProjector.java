@@ -75,8 +75,8 @@ public class ConeBeamProjector {
 
 	public ConeBeamProjector() {
 		configure();
-		initCL2();
-//		initCL();
+//		initCL2();
+		initCL();
 	}
 	
 	private void initCL(){
@@ -365,8 +365,8 @@ public class ConeBeamProjector {
 
 		// Assumed the vectors have only one non-zero element
 		// use 
-//		du[0] = 1;
-//		dv[1] = 1;
+		du[0] = 1;
+		dv[1] = 1;
 
 
 

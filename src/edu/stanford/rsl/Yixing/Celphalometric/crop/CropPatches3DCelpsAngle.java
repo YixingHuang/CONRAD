@@ -9,7 +9,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 
-public class CropPatches3DCelps {
+public class CropPatches3DCelpsAngle {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		GenerateTestPatches obj = new GenerateTestPatches();
@@ -18,14 +18,14 @@ public class CropPatches3DCelps {
 		String saveName;
 		ImagePlus imp;
 		String imgNameIn;
-		int sz = 70; 
-		int sz2 = 140;
-		int offset1 = 420;
-		int offset2 = 250;//for nose
-//		int sz = 70;
-//		int sz2 = 70;
-//		int offset1 = 250;
-//		int offset2 = 350;
+//		int sz = 70; 
+//		int sz2 = 140;
+//		int offset1 = 420;
+//		int offset2 = 250;//for nose
+		int sz = 70;
+		int sz2 = 70;
+		int offset1 = 250;
+		int offset2 = 350;
 		Grid2D img;
 		int idx = 1609;
 
@@ -38,8 +38,8 @@ public class CropPatches3DCelps {
 		Grid2D img2 = cropImage(img, offset1, offset2,sz, sz2);;
 		img2.clone().show(idx + "Farma" + sz);
 		imp = ImageUtil.wrapGrid(img2, null);
-		imp.setDisplayRange(0, 125);
-		saveName = savePath + "Farma" + sz + "_2.png";
+		imp.setDisplayRange(0, 255);
+		saveName = savePath + "Farma" + sz + "_3.png";
 		IJ.saveAs(imp, "png", saveName);
 		
 		imgNameIn = path + "Kumar.png";
@@ -48,8 +48,8 @@ public class CropPatches3DCelps {
 		img2 = cropImage(img, offset1, offset2,sz, sz2);;
 		img2.clone().show(idx + "Kumar" + sz);
 		imp = ImageUtil.wrapGrid(img2, null);
-		imp.setDisplayRange(0, 125);
-		saveName = savePath + "Kumar" + sz + "_2.png";
+		imp.setDisplayRange(0, 255);
+		saveName = savePath + "Kumar" + sz + "_3.png";
 		IJ.saveAs(imp, "png", saveName);
             		
 		imgNameIn = path + "MIP50.png";
@@ -58,8 +58,8 @@ public class CropPatches3DCelps {
 		img2 = cropImage(img, offset1, offset2,sz, sz2);;
 		img2.clone().show(idx + "MIP50" + sz);
 		imp = ImageUtil.wrapGrid(img2, null);
-		imp.setDisplayRange(0, 125);
-		saveName = savePath + "MIP50" + sz + "_2.png";
+		imp.setDisplayRange(0, 255);
+		saveName = savePath + "MIP50" + sz + "_3.png";
 		IJ.saveAs(imp, "png", saveName);
 		
 		
@@ -69,8 +69,8 @@ public class CropPatches3DCelps {
 		img2 = cropImage(img, offset1, offset2,sz, sz2);;
 		img2.clone().show(idx + "MIP100"+ sz);
 		imp = ImageUtil.wrapGrid(img2, null);
-		imp.setDisplayRange(0, 125);
-		saveName = savePath + "MIP100" + sz + "_2.png";
+		imp.setDisplayRange(0, 255);
+		saveName = savePath + "MIP100" + sz + "_3.png";
 		IJ.saveAs(imp, "png", saveName);
 
 		imgNameIn = path + "parallelProjectionEnhanced.png";
@@ -79,8 +79,8 @@ public class CropPatches3DCelps {
 		img2 = cropImage(img, offset1, offset2,sz, sz2);;
 		img2.clone().show(idx + "parallelProjectionEnhanced"+ sz);
 		imp = ImageUtil.wrapGrid(img2, null);
-		imp.setDisplayRange(0, 125);
-		saveName = savePath + "parallelProjectionEnhanced" + sz + "_2.png";
+		imp.setDisplayRange(0, 255);
+		saveName = savePath + "parallelProjectionEnhanced" + sz + "_3.png";
 		IJ.saveAs(imp, "png", saveName);
 		
 		imgNameIn = path + "backgroundRecovery.png";
@@ -89,8 +89,8 @@ public class CropPatches3DCelps {
 		img2 = cropImage(img, offset1, offset2,sz, sz2);;
 		img2.clone().show(idx + "backgroundRecovery"+ sz);
 		imp = ImageUtil.wrapGrid(img2, null);
-		imp.setDisplayRange(0, 125);
-		saveName = savePath + "backgroundRecovery" + sz + "_2.png";
+		imp.setDisplayRange(0, 255);
+		saveName = savePath + "backgroundRecovery" + sz + "_3.png";
 		IJ.saveAs(imp, "png", saveName);
 		
 		imgNameIn = path + "p0.png";
@@ -99,8 +99,8 @@ public class CropPatches3DCelps {
 		img2 = cropImage(img, offset1, offset2,sz, sz2);;
 		img2.clone().show(idx + "p0"+ sz);
 		imp = ImageUtil.wrapGrid(img2, null);
-		imp.setDisplayRange(0, 125);
-		saveName = savePath + "p0" + sz + "_2.png";
+		imp.setDisplayRange(0, 255);
+		saveName = savePath + "p0" + sz + "_3.png";
 		IJ.saveAs(imp, "png", saveName);
 		
 		imgNameIn = path + "backgroundRecoveryPerspective.png";
@@ -109,8 +109,8 @@ public class CropPatches3DCelps {
 		img2 = cropImage(img, offset1, offset2,sz, sz2);;
 		img2.clone().show(idx + "backgroundRecoveryPerspective"+ sz);
 		imp = ImageUtil.wrapGrid(img2, null);
-		imp.setDisplayRange(0, 125);
-		saveName = savePath + "backgroundRecoveryPerspective" + sz + "_2.png";
+		imp.setDisplayRange(0, 255);
+		saveName = savePath + "backgroundRecoveryPerspective" + sz + "_3.png";
 		IJ.saveAs(imp, "png", saveName);
 		
 		

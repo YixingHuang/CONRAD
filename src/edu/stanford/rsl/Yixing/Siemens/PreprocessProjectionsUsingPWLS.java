@@ -14,7 +14,7 @@ public class PreprocessProjectionsUsingPWLS {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		
-		String path =  "E:\\SiemensMarkerData\\projectionPadded.tif";
+		String path =  "E:\\SiemensMarkerData\\Water\\projectionPadded180.tif";
 		ImagePlus imp0 =IJ.openImage(path);
 		Grid3D proj0 = ImageUtil.wrapImagePlus(imp0);
 		proj0.show("projections");
@@ -22,11 +22,11 @@ public class PreprocessProjectionsUsingPWLS {
 		OpenCLGrid3D projCL = new OpenCLGrid3D(proj0);
 		Grid3D projProcessed = new Grid3D(proj0.getSize()[0], proj0.getSize()[1], proj0.getSize()[2]);
 		OpenCLGrid3D projProcessedCL = new OpenCLGrid3D(projProcessed);
-		PenalizedWeightedLeastSquare pwls= new PenalizedWeightedLeastSquare(0.5f, 2);
+		PenalizedWeightedLeastSquare pwls= new PenalizedWeightedLeastSquare(0.5f, 5);
 		pwls.excute3D(projProcessedCL, projCL);
 		projProcessedCL.getDelegate().notifyDeviceChange();
 		    
-		String path3 = "E:\\SiemensMarkerData\\projectionPaddedPWLS.tif";
+		String path3 = "E:\\SiemensMarkerData\\Water\\projectionPadded180PWLS5.tif";
 
 		projProcessed = new Grid3D(projProcessedCL);
 		imp0 = ImageUtil.wrapGrid3D(projProcessed, null);

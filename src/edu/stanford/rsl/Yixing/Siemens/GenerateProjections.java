@@ -47,32 +47,30 @@ public class GenerateProjections {
 		new ImageJ();
 		
 		String path = "E:\\SiemensMarkerData\\volumesWithMarker\\"; //path for wTV data
-		String pathRecon = "E:\\SiemensMarkerData\\recon\\";
-		String savePath = "E:\\SiemensMarkerData\\projections\\";
+
+		String savePath = "E:\\SiemensMarkerData\\projectionsTry\\";
 		String saveName1;
 		GenerateProjections obj = new GenerateProjections(); 
 		obj.initialGeometry();
-		OpenCLGrid3D recon_no_leison;
+
 		
 		//Grid3D img = obj.getOriginalGroundTruthData(path, 7);
 		//img.clone().show("img");
 		
 		ImagePlus imp1, imp2;
-		boolean isTumor = false;
+
 		boolean isNoisy = false;
-		float numTrunc = 100;
+		float numTrunc = 200;
 		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
 		WaterCylinderExtrapolation2DFan wceObj = new WaterCylinderExtrapolation2DFan(obj.height, (int)numTrunc);
-		Grid2D tempSino;
-		for(int i = 17; i <= 18; i++){
-		//int i = 1;
+
+		for(int i = 1; i <= 1; i++){
+
 			obj.cbp=new ConeBeamProjector();
 			obj.cbbp=new ConeBeamBackprojector();
-			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i, isTumor));
+			obj.volCL = new OpenCLGrid3D(obj.getGroundTruthData(path, i));
 			obj.rescaleData(obj.volCL);
-//			recon_no_leison = new OpenCLGrid3D(obj.volCL);
-			//obj.addTumors(obj.volCL);
-			//obj.volCL.clone().show("volCL");
+
 
 			
 			obj.getMeasuredSinoCL();
@@ -98,22 +96,11 @@ public class GenerateProjections {
 			saveName1 = savePath + "projection" +i + ".tif";
 		    IJ.saveAs(imp1, "Tiff", saveName1);
 			
-//			obj.FDKReconstruction(obj.sinogram);
-//			obj.artifactCL = new OpenCLGrid3D(obj.reconCL);
-//			//obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, obj.volCL);
-//			obj.artifactCL.getGridOperator().subtractBy(obj.artifactCL, recon_no_leison);
-//			obj.volCL.getGridOperator().divideBy(obj.volCL, 0.07f);
-//			obj.reconCL.getGridOperator().divideBy(obj.reconCL, 0.07f);
-//			obj.artifactCL.getGridOperator().divideBy(obj.artifactCL, 0.07f);
-//			obj.saveTrainingData(pathRecon, obj.volCL, obj.reconCL, obj.artifactCL, i);
-//			//obj.saveFullReconData(pathRecon, obj.reconCL, i);
-//			obj.volCL.release();
-//			obj.reconCL.release();
-//			obj.artifactCL.release();
 //			
 			System.out.println(i);
 			
 		}
+		System.out.println("finished");
     }
 	
 	private void addTumors(Grid3D gtImages){
@@ -272,7 +259,7 @@ public class GenerateProjections {
 //		return gtImages;
 //	}
 	
-	public Grid3D getGroundTruthData(String path, int ii, boolean isTumor){
+	public Grid3D getGroundTruthData(String path, int ii){
 
 		ImagePlus imp;
 		Grid3D imgTemp;

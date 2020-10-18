@@ -25,6 +25,7 @@ public class CropPatches {
 		//38 34 30
 		//146 34 32
 		//11207 2 3
+		//11207 32 128
 		imgNameIn = path + "rrdn" +  idx + ".png";
 		imp = IJ.openImage(imgNameIn);
 		img = ImageUtil.wrapImagePlus(imp).getSubGrid(0);

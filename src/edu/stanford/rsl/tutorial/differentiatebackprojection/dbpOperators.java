@@ -118,14 +118,14 @@ public class dbpOperators {
 		Grid1D signal2 = coeFourier.getImagSubGrid(0, N);//get the imaginary part
 		
 		float C;
-		int tag = 0;
+		int tag = 1;
 		if(tag == 0)
 			C =  -signal2.getAtIndex(0); //compute C with the known prior value 0
 		else
 		{
 			float sum = 0;
 			float sumw = 0;
-			for(int i = 0; i < 20; i++) {
+			for(int i = 0; i < 40; i++) {
 				s = ((i + 0.5) - N/2.0) * ds;
 				w = -1/(Math.sqrt(R2 - s * s) * Math.PI);
 				sum += signal2.getAtIndex(i) * w;

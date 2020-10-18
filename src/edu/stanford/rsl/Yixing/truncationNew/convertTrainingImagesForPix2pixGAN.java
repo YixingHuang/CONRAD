@@ -1,5 +1,6 @@
-package edu.stanford.rsl.Yixing.Celphalometric.superResolution;
+package edu.stanford.rsl.Yixing.truncationNew;
 
+import java.io.File;
 import java.io.IOException;
 
 import edu.stanford.rsl.conrad.data.numeric.Grid2D;
@@ -10,70 +11,64 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import flanagan.interpolation.*;
 
-public class GenerateTestPatchesLROverlap {
+public class convertTrainingImagesForPix2pixGAN {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		boolean isPix = false;
-		GenerateTestPatchesLROverlap obj = new GenerateTestPatchesLROverlap();
-		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
-		String savePath;
-		if(isPix)
-			savePath = "D:\\Pix2pix\\tools\\superResolution\\testCelp\\";
-		else
-			savePath = "D:\\imageSuperResolutionV2_1\\low_res\\testCelpSoft\\";
-		
-		String saveName;
+		convertTrainingImagesForPix2pixGAN obj = new convertTrainingImagesForPix2pixGAN();
+		String pathInput = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\trainingData_d10\\";
+		String pathOutput = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\trainingData_d10\\";
+		String trainingPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\pix2pixTrainingData_d10\\";
+		String valPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\pix2pixValData_d10\\";
+		String savePath, savePath2;
+		String saveName, saveName2;
 		ImagePlus imp;
-		Grid2D ds, us, input, output;
+		Grid2D input, output;
+		Grid2D ds, us, bs;
+		Grid2D gtcopy;
 		String imgNameIn, imgNameOut;
 		int startX, startY;
 		int saveId = 1;
 		Grid2D patchIn, patchOut, merge;
-		int sz = 64;
+		int szIn = 256;
+		int ycut = 0;
 		
-		patchIn = new Grid2D(sz, sz);
-		patchOut = new Grid2D(sz, sz);
-		for(int idx = 0; idx <= 0; idx ++) {
-			imgNameIn = path + "p" + idx + ".png";
-			imp = IJ.openImage(imgNameIn);
-			us = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-//            for(int i = 0; i <= 16; i++) {
-//            	for(int j = 0; j <= 16; j++ ) {
-//            		startX = i * 32;
-//            		startY = j * 32;
-//					saveId = idx * 10000 + j * 100 + i;
-            for(int i = 7; i <= 7; i++) {
-            	for(int j = 12; j <= 12; j++ ) {
-            		startX = i * 32 + 6;
-            		startY = j * 32 + 25;
-            		saveId = 10000 + j * 100 + i;
-            		for(int x = 0; x < sz; x++) {
-            			for(int y = 0; y < sz; y++)
-            			{
-            				if((startX + x >= us.getSize()[0]) || (startY + y >= us.getSize()[1]))
-            					patchIn.setAtIndex(x, y, 0);
-            				else
-            					patchIn.setAtIndex(x, y, us.getAtIndex(startX + x, startY + y));
-            			}
-            		}
-            		patchOut = (Grid2D)patchIn.clone();
-            		merge = obj.mergeImages(patchIn, patchOut);
-            		saveName = savePath + saveId + ".png";
-            		if(isPix)
-            			imp = ImageUtil.wrapGrid(merge, null);
-            		else
-            		{
-            			imp = ImageUtil.wrapGrid(patchIn, null);
-            			imp.setDisplayRange(0, 255);
-            			IJ.run(imp, "RGB Color", "");
-            		}
-            		imp.setDisplayRange(0, 255);
-            		IJ.saveAs(imp, "png", saveName);
-            		
-            	}
-            }
-            System.out.print(idx + " ");
+		patchIn = new Grid2D(szIn, szIn);
+		patchOut = new Grid2D(szIn, szIn);
+		int id = 0;
+		for(int patient = 19; patient <= 19; patient ++) {
+			for(int z = 10; z < 256; z = z + 10) {
+				id = patient * 1000 + z;
+				imgNameIn = pathInput + "data" + id + ".tif";
+				File outPutDir=new File(imgNameIn);
+				if (!outPutDir.exists())
+					continue;
+				imp = IJ.openImage(imgNameIn);
+				input = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
+				imgNameOut = pathOutput + "data" + id + "_mask.tif";;
+				outPutDir=new File(imgNameOut);
+				if (!outPutDir.exists())
+					continue;
+				imp = IJ.openImage(imgNameOut);
+				output = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
+				if(patient <= 18) {
+					savePath = trainingPath;
+				}
+				else
+				{
+					savePath = valPath;
+				}
+	           			
+
+	            		//this is for merged images
+	            	merge = obj.mergeImages(input, output);
+	            	saveName = savePath + id + ".tif";
+	            	imp = ImageUtil.wrapGrid(merge, null);
+	            	IJ.saveAs(imp, "Tiff", saveName);
+	            System.out.print(patient + " ");
+			}
 		}
+		System.out.println("Finished!");
+		System.out.println("Finished!");
 	}
 	
 	Grid2D mergeImages(Grid2D data2D, Grid2D mask2D) {

@@ -45,8 +45,8 @@ public class GenerateReconstrutions {
 	public Grid3D recon;
 	public Grid3D sinogram;
 
-	private String sinoPath = "E:\\SiemensMarkerData\\projections\\";
-	private String savePath = "E:\\SiemensMarkerData\\recon\\";
+	private String sinoPath = "E:\\SiemensMarkerData\\projectionsTry\\";
+	private String savePath = "E:\\SiemensMarkerData\\reconTry\\";
 	
 	public static void main(String[] args) throws Exception {
 		new ImageJ();
@@ -55,20 +55,20 @@ public class GenerateReconstrutions {
 		obj.initialGeometry();
 
 		ImagePlus imp1, imp2;
-		boolean isNoisy = false;
-		float numTrunc = 105;
+		float numTrunc = 200;
 		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
 		WaterCylinderExtrapolation2DFan wceObj = new WaterCylinderExtrapolation2DFan(obj.height, (int)numTrunc);
 		Grid2D tempSino;
 		ImagePlus imp;
 		String saveName;
-		for(int i = 1; i <= 18; i++){
+		for(int i = 1; i <= 1; i++){
 
 			obj.cbp=new ConeBeamProjector();
 			obj.cbbp=new ConeBeamBackprojector();
 
 			obj.loadMeasuredSinogram(i);
-
+			
+			System.out.println("start extrapolation ...");
 			for(int projIdx = 0; projIdx < obj.sinogram.getSize()[2]; projIdx++)
 			{
 				tempSino = wceObj.run2DWaterCylinderExtrapolation(obj.sinogram.getSubGrid(projIdx));
@@ -138,6 +138,8 @@ public class GenerateReconstrutions {
 		ConeBeamCosineFilter cbFilter = new ConeBeamCosineFilter(focalLength, width, height, deltaU, deltaV);
 		RamLakKernel ramK = new RamLakKernel(width, deltaU);
 		ParkerWeightingTool parker = new ParkerWeightingTool(geo);
+		
+		System.out.println("Start filtering");
 		for (int i = 0; i < numProjs; ++i) 
 			
 		{
@@ -152,7 +154,7 @@ public class GenerateReconstrutions {
 			System.out.print(i + " ");
 		}
 		System.out.println(" ");
-		
+		System.out.println("Start backprojection");
 		recon = cbbp.backprojectPixelDrivenCL(sinogram2);
 //		reconFDK.show("FDK recon");
 		//float scalCorrection = (float)( 260/(34.5*720000));
