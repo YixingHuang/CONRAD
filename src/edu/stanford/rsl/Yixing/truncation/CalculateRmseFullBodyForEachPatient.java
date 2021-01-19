@@ -23,6 +23,7 @@ public class CalculateRmseFullBodyForEachPatient {
 		String uNetPath = "E:\\FAU4\\TruncationCorrection\\NoiseFree3D\\UNetRecons\\";
 		String wTvPath = "E:\\FAU4\\TruncationCorrection\\NoiseFree3D\\wTV\\";
 		String DcrPath = "E:\\FAU4\\TruncationCorrection\\NoiseFree3D\\DCR\\";
+		
 
 		ImagePlus imp1;
 		String nameGT, nameWCE, nameFBP, nameUNet, nameWTV, nameDCR;

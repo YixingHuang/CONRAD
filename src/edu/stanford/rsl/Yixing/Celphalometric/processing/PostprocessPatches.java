@@ -14,7 +14,8 @@ public class PostprocessPatches {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		PostprocessPatches obj = new PostprocessPatches();
-		String inputPath = "D:\\Dropbox\\Dropbox\\Cephalogram\\templateTMI\\Figures\\patchTest1Output_RGB4.png";
+//		String inputPath = "D:\\Dropbox\\Dropbox\\Cephalogram\\templateTMI\\Figures\\patchTest1Output_RGB4.png";
+		String inputPath = "D:\\CycleGAN-tensorflow\\test\\p2cep1Chan\\AtoB_2.png";
 		String maskPath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\maskGradient0.tif";
 		ImagePlus imp = IJ.openImage(maskPath);
 		Grid2D mask = ImageUtil.wrapImagePlus(imp).getSubGrid(0);

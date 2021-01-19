@@ -1,4 +1,4 @@
-package edu.stanford.rsl.Yixing.truncationNew;
+package edu.stanford.rsl.Yixing.truncationPix;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -20,13 +20,14 @@ public class CreateTestFolders {
 		new ImageJ();
 		CreateTestFolders obj = new CreateTestFolders();
 
-		String path2 = "D:\\Pix2pix\\truncationResults\\NoiseFree\\";
+		String path2 = "C:\\Tasks\\FAU4\\TruncationCorrection\\Pix2pix\\Noisy3D\\";
 
 		String folderName;
 	
 		File outPutDir;
 		for(int idx = 1; idx<=18; idx ++){
-			folderName = path2 + "\\testResult" + idx + "\\";
+//			folderName = path2 + "\\testResult" + idx + "\\";
+			folderName = path2 + "\\model" + idx + "\\";
 			outPutDir = new File(folderName);
 			if(!outPutDir.exists()){
 			    outPutDir.mkdirs();

@@ -14,8 +14,8 @@ public class GenerateHRTestImages {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		GenerateHRTestImages obj = new GenerateHRTestImages();
-		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\RayCast\\";
-		String savePath = "D:\\Pix2pix\\tools\\superResolution\\test3\\";
+		String path = "D:\\Tasks\\FAU4\\Cephalometric\\CycleGANresults\\";
+		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\CycleGANresults\\";
 		String saveName;
 		ImagePlus imp;
 		Grid2D ds, us, input, output;
@@ -27,15 +27,15 @@ public class GenerateHRTestImages {
 		
 		patchIn = new Grid2D(sz, sz);
 		patchOut = new Grid2D(sz, sz);
-		for(int idx = 0; idx <= 4; idx ++) {
-			imgNameIn = path + "RayCast" + idx + ".png";
+		for(int idx = 1; idx <= 5; idx ++) {
+			imgNameIn = path + "us" + idx + ".png";
 			imp = IJ.openImage(imgNameIn);
 			ds = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
 			ds.setSpacing(0.5, 0.5);
 			ds.setOrigin(-(ds.getSize()[0] - 1.0) * ds.getSpacing()[0]/2.0, -(ds.getSize()[1] - 1.0) * ds.getSpacing()[1]/2.0);
 			us = obj.upsampling(ds, 5);
 			us.clone().show("us");
-			saveName = path + "s" + idx + ".png";
+			saveName = path + "qs" + idx + ".png";
 			imp = ImageUtil.wrapGrid(us, null);
 			imp.setDisplayRange(0, 255);
     		IJ.saveAs(imp, "png", saveName);

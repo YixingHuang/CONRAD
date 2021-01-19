@@ -1,4 +1,4 @@
-package edu.stanford.rsl.Yixing.truncationNew;
+package edu.stanford.rsl.Yixing.truncationClinic.clinicalReconstruction;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,59 +11,53 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import flanagan.interpolation.*;
 
-public class convertTrainingImagesForPix2pixGAN {
+public class getTestSlices256 {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		convertTrainingImagesForPix2pixGAN obj = new convertTrainingImagesForPix2pixGAN();
-		String pathInput = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\trainingData_d10\\";
-		String pathOutput = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\trainingData_d10\\";
-		String trainingPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\pix2pixTrainingData_d10\\";
-		String valPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\pix2pixValData_d10\\";
-		String savePath, savePath2;
+		getTestSlices256 obj = new getTestSlices256();
+		String pathInput = "D:\\Tasks\\FAU4\\TruncationCorrection\\clinical\\clinicRecons\\";
+		String pathOutput = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\trainingData_d10\\";
+		String trainingPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\clinical\\trainingSlices\\";
+		String valPath = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\pix2pixValData_d10\\";
+		String savePath = "D:\\Tasks\\FAU4\\TruncationCorrection\\clinical\\test3_10\\";
 		String saveName, saveName2;
 		ImagePlus imp;
 		Grid2D input, output;
 		Grid2D ds, us, bs;
 		Grid2D gtcopy;
+		String pathIn, pathOut;
 		String imgNameIn, imgNameOut;
 		int startX, startY;
 		int saveId = 1;
-		Grid2D patchIn, patchOut, merge;
+		Grid3D wce, artifact;
+		Grid2D patchIn, patchOut, merge, patchIn2, patchOut2;;
 		int szIn = 256;
 		int ycut = 0;
 		
 		patchIn = new Grid2D(szIn, szIn);
 		patchOut = new Grid2D(szIn, szIn);
 		int id = 0;
-		for(int patient = 19; patient <= 19; patient ++) {
-			for(int z = 10; z < 256; z = z + 10) {
-				id = patient * 1000 + z;
-				imgNameIn = pathInput + "data" + id + ".tif";
-				File outPutDir=new File(imgNameIn);
-				if (!outPutDir.exists())
-					continue;
-				imp = IJ.openImage(imgNameIn);
-				input = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-				imgNameOut = pathOutput + "data" + id + "_mask.tif";;
-				outPutDir=new File(imgNameOut);
-				if (!outPutDir.exists())
-					continue;
-				imp = IJ.openImage(imgNameOut);
-				output = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-				if(patient <= 18) {
-					savePath = trainingPath;
-				}
-				else
-				{
-					savePath = valPath;
-				}
-	           			
+		for(int patient = 2; patient <= 2; patient ++) {
+			pathIn = pathInput + "WCE" + patient + ".tif";
+			pathOut = pathInput + "artifact" + patient + ".tif";
+			imp =IJ.openImage(pathIn);
+			wce = ImageUtil.wrapImagePlus(imp);
+			imp =IJ.openImage(pathOut);
+			artifact = ImageUtil.wrapImagePlus(imp);
+	
+			for(int z = 0; z < wce.getSize()[2]; z = z + 10) {
+				id = (patient) * 100000 + z;
+				
+				patchIn2 = (Grid2D)wce.getSubGrid(z).clone();
+				patchOut2 = (Grid2D)artifact.getSubGrid(z).clone();
+				patchIn = obj.subsampling(patchIn2, 2);
+				patchOut = obj.subsampling(patchOut2, 2);
+            	merge = obj.mergeImages(patchIn, patchOut);
+            	saveName = savePath + id + ".tif";
+            	imp = ImageUtil.wrapGrid(merge, null);
+            	IJ.saveAs(imp, "Tiff", saveName);	
 
-	            		//this is for merged images
-	            	merge = obj.mergeImages(input, output);
-	            	saveName = savePath + id + ".tif";
-	            	imp = ImageUtil.wrapGrid(merge, null);
-	            	IJ.saveAs(imp, "Tiff", saveName);
+
 	            System.out.print(patient + " ");
 			}
 		}
@@ -99,7 +93,7 @@ public class convertTrainingImagesForPix2pixGAN {
 		int height = (img.getHeight() - 1)/factor + 1;
 		Grid2D img2 = new Grid2D(width, height);
 		img2.setSpacing(img.getSpacing()[0] * factor, img.getSpacing()[1] * factor);
-		img2.setOrigin(-(img2.getSize()[0] - 1.0) * img2.getSpacing()[0]/2.0, -(img2.getSize()[1] - 1.0) * img2.getSpacing()[1]/2.0);
+		img2.setOrigin(img.getOrigin()[0] + img.getSpacing()[0] * (factor - 1)/2.0, img.getOrigin()[1] + img.getSpacing()[1] * (factor - 1)/2.0);
 		for(int i = 0; i < width; i++)
 			for(int j = 0; j < height; j++) {
 				val = 0; count = 0;
@@ -115,21 +109,6 @@ public class convertTrainingImagesForPix2pixGAN {
 						}
 					}
 				img2.setAtIndex(i, j, val/count);
-			}
-		
-		return img2;
-	}
-	
-	public Grid2D subsampling2(Grid2D img, int factor)
-	{
-		int width = (img.getWidth() - 1)/factor + 1;
-		int height = (img.getHeight() - 1)/factor + 1;
-		Grid2D img2 = new Grid2D(width, height);
-		img2.setSpacing(img.getSpacing()[0] * factor + img.getSize()[1] * factor);
-		img2.setOrigin(-(img2.getSize()[0] - 1.0) * img2.getSpacing()[0]/2.0, -(img2.getSize()[1] - 1.0) * img2.getSpacing()[1]/2.0);
-		for(int i = 0; i < width; i++)
-			for(int j = 0; j < height; j++) {
-				img2.setAtIndex(i, j, img.getAtIndex(i * factor, j * factor));
 			}
 		
 		return img2;

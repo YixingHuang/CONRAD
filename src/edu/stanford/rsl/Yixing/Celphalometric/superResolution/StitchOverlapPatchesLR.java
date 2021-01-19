@@ -11,18 +11,22 @@ import ij.ImagePlus;
 public class StitchOverlapPatchesLR {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		int tag = 0;
+		int tag = 1;
 		GenerateTestPatches obj = new GenerateTestPatches();
 		String path;
 		String savePath;
 		if(tag == 0) {
-			path = "D:\\imageSuperResolutionV2_1\\testResults\\RDN5_celpSoft\\";
-			savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\celpRDNMask";
+//			path = "D:\\imageSuperResolutionV2_1\\testResults\\RDN5_celpSoft\\";
+//			savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\celpRDNMask";
+			path = "D:\\imageSuperResolutionV2_1\\testResults\\RDN5_celpSoftOthers\\";
+			savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2Others\\celpRDN";
 		}
 		else
 		{
-			path = "D:\\imageSuperResolutionV2_1\\testResults\\RRDN5_celpSoft\\";
-			savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\celpRRDN";
+//			path = "D:\\imageSuperResolutionV2_1\\testResults\\RRDN5_celpSoft\\";
+//			savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\celpRRDN";
+			path = "D:\\imageSuperResolutionV2_1\\testResults\\RRDN5_celpSoftOthers\\";
+			savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2Others\\celpRRDN";
 		}
 		String saveName;
 		ImagePlus imp;
@@ -32,23 +36,23 @@ public class StitchOverlapPatchesLR {
 		int saveId = 1;
 		int sz = 320;
 		
-		String maskPath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\smask0.png";
-		imp = IJ.openImage(maskPath);
-		Grid2D mask = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-		for(int i = 0; i < mask.getWidth(); i++)
-			for(int j = 0; j < mask.getHeight(); j++)
-				if(mask.getAtIndex(i, j) < 125)
-					mask.setAtIndex(i, j, 0);
-				else
-					mask.setAtIndex(i, j, 1);
-		mask.show("smask");
+//		String maskPath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps\\smask0.png";
+//		imp = IJ.openImage(maskPath);
+//		Grid2D mask = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
+//		for(int i = 0; i < mask.getWidth(); i++)
+//			for(int j = 0; j < mask.getHeight(); j++)
+//				if(mask.getAtIndex(i, j) < 125)
+//					mask.setAtIndex(i, j, 0);
+//				else
+//					mask.setAtIndex(i, j, 1);
+//		mask.show("smask");
 
 		Grid2D us = new Grid2D(2560, 2560);
-		for(int idx = 0; idx <= 0; idx ++) {
+		for(int idx = 0; idx <= 4; idx ++) {
             for(int i = 0; i <= 16; i++) {
             	for(int j = 0; j <= 16; j++ ) {
-            		startX = i * 128 * 5;
-            		startY = j * 128 * 5;
+            		startX = i * 32 * 5;
+            		startY = j * 32 * 5;
             		saveId = idx * 10000 + j * 100 + i;
             		System.out.println("i = " + i + ", j =" + j);
             		imgNameIn = path + saveId + ".png";
@@ -59,7 +63,7 @@ public class StitchOverlapPatchesLR {
         			if(j == 0) 
         			{
         				int sx = (i == 0) ? 0 : sz/4;
-        				int ex = (i == 18) ? sz : sz * 3/4;
+        				int ex = (i == 16) ? sz : sz * 3/4;
         				for(int x = sx; x < ex; x++) 
         					for(int y = 0; y < sz/4; y++)
         						us.setAtIndex(startX + x, startY + y, patch.getAtIndex(x, y));
@@ -67,23 +71,23 @@ public class StitchOverlapPatchesLR {
         			if(i == 0)
         			{
         				int sy = (j == 0) ? 0 : sz/4;
-        				int ey = (j == 18) ? sz : sz * 3/4;
+        				int ey = (j == 16) ? sz : sz * 3/4;
         				for(int x = 0; x < sz/4; x++)
         					for(int y = sy; y < ey; y++)
         						us.setAtIndex(startX + x, startY + y, patch.getAtIndex(x, y));
         			}
-        			if(j == 18) 
+        			if(j == 16) 
         			{
         				int sx = (i == 0) ? 0 : sz/4;
-        				int ex = (i == 18) ? sz : sz * 3/4;
+        				int ex = (i == 16) ? sz : sz * 3/4;
         				for(int x = sx; x < ex; x++) 
         					for(int y = sz * 3/4; y < sz; y++)
         						us.setAtIndex(startX + x, startY + y, patch.getAtIndex(x, y));
         			}
-        			if(i == 18)
+        			if(i == 16)
         			{
         				int sy = (j == 0) ? 0 : sz/4;
-        				int ey = (j == 18) ? sz : sz * 3/4;
+        				int ey = (j == 16) ? sz : sz * 3/4;
         				for(int x = sz *3/4; x < sz; x++)
         					for(int y = sy; y < ey; y++)
         						us.setAtIndex(startX + x, startY + y, patch.getAtIndex(x, y));
@@ -99,7 +103,7 @@ public class StitchOverlapPatchesLR {
             	}
             }
             us.clone().show("us");
-            us.getGridOperator().multiplyBy(us, mask);
+//            us.getGridOperator().multiplyBy(us, mask);
 
             saveName = savePath + idx + ".png";
     		imp = ImageUtil.wrapGrid(us, null);

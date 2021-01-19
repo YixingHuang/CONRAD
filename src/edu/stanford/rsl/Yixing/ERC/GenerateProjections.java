@@ -48,7 +48,7 @@ public class GenerateProjections {
 		
 		String path = "E:\\Lasse\\BVM\\subvolume.tif"; //path for wTV data
 
-		String savePath = "E:\\Lasse\\BVM\\";
+		String savePath = "E:\\Lasse\\LimitedAngle\\";
 		String saveName1;
 		GenerateProjections obj = new GenerateProjections(); 
 		obj.initialGeometry();
@@ -70,7 +70,7 @@ public class GenerateProjections {
 			imp1 = IJ.openImage(path);
 			vol = ImageUtil.wrapImagePlus(imp1);
 			obj.volCL = new OpenCLGrid3D(vol);
-	
+			
 
 
 			
@@ -89,11 +89,11 @@ public class GenerateProjections {
 //			System.out.println(" ");
 			
 
-			//obj.sinogram.clone().show("sinogram");
+//			obj.sinogram.show("sinogram");
 		    
 
 			imp1 = ImageUtil.wrapGrid(obj.sinogram, null);
-			saveName1 = savePath + "projectionNoisy1" +i + ".tif";
+			saveName1 = savePath + "projection150Degree" +i + ".tif";
 		    IJ.saveAs(imp1, "Tiff", saveName1);
 			
 //			
@@ -225,6 +225,7 @@ public class GenerateProjections {
 		sinoCL = new OpenCLGrid3D(new Grid3D(width, height, maxProjs));
 		sinoCL.getDelegate().prepareForDeviceOperation();
 		cbp.fastProjectRayDrivenCL(sinoCL, volCL);
+		sinoCL.getDelegate().notifyDeviceChange();
 		//sinoCL.show("sinoCL");
 	}
 	

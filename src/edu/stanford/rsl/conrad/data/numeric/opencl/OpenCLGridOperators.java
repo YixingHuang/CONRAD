@@ -526,7 +526,7 @@ public class OpenCLGridOperators extends NumericGridOperator {
 		clGrid.getDelegate().prepareForDeviceOperation();
 		
 		CLBuffer<FloatBuffer> clmem = clGrid.getDelegate().getCLBuffer();
-		runKernel("expontial", device, clmem);
+		runKernel("expotential", device, clmem);
 		
 		clGrid.getDelegate().notifyDeviceChange();
 	}
@@ -1022,6 +1022,21 @@ public class OpenCLGridOperators extends NumericGridOperator {
 		CLBuffer<FloatBuffer> clmemA = clGridA.getDelegate().getCLBuffer();
 		
 		runKernel("softThreshold", device, clmemA, value);
+		clGridA.getDelegate().notifyDeviceChange();
+	}
+	@Override
+	public void thresholding(final NumericGrid gridA, float value) {
+		// not possible to have a grid that is not implementing OpenCLGridInterface
+		OpenCLGridInterface clGridA = (OpenCLGridInterface)gridA;
+
+		clGridA.getDelegate().prepareForDeviceOperation();
+		
+		// TODO check if both live on the same device.
+		CLDevice device = clGridA.getDelegate().getCLDevice(); 
+
+		CLBuffer<FloatBuffer> clmemA = clGridA.getDelegate().getCLBuffer();
+		
+		runKernel("threshold", device, clmemA, value);
 		clGridA.getDelegate().notifyDeviceChange();
 	}
 	

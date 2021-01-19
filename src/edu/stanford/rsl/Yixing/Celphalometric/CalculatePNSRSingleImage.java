@@ -29,8 +29,8 @@ public class CalculatePNSRSingleImage {
 		int count = 0;
 		float max = 0;
 		for(int idx = 1; idx <= 1; idx ++){	
-			nameGT = path + "patch3Test1Target.png";
-			nameOut = path + "patch3Test1FourModels.png";
+			nameGT = path + "patchTest1Target.png";
+			nameOut = path + "patchTest1pOutputCycleGAN.png";
 //			nameOut = path + idx + "-inputs.png";
 			
 			imp1=IJ.openImage(nameGT);

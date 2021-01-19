@@ -11,15 +11,17 @@ import ij.ImagePlus;
 public class StitchOverlapPatches {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		boolean isPix = false;
+		boolean isPix = true;
 		GenerateTestPatches obj = new GenerateTestPatches();
 		String path;
 		if(isPix)
-			path = "D:\\Pix2pix\\superResolutionResults\\superResolution_testCelpSoft2\\images\\";
+			path = "D:\\Pix2pix\\superResolutionResults\\superResolution_testCycle\\images\\";
 		else
-			path = "D:\\imageSuperResolutionV2_1\\testResults\\RDN1_celpSoft\\";
+			path = "D:\\imageSuperResolutionV2_1\\testResults\\RDN1_celpSoftOthersRedo\\";
 //			path = "D:\\imageSuperResolutionV2_1\\testResults\\RRDN1_celpSoft\\";
-		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
+//		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
+		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\CycleGANresults\\";
+		
 		String saveName;
 		ImagePlus imp;
 		Grid2D patch;
@@ -40,7 +42,7 @@ public class StitchOverlapPatches {
 		mask.show("smask");
 
 		Grid2D us = new Grid2D(2560, 2560);
-		for(int idx = 0; idx <= 0; idx ++) {
+		for(int idx = 1; idx <= 5; idx ++) {
             for(int i = 0; i <= 18; i++) {
             	for(int j = 0; j <= 18; j++ ) {
             		startX = i * 128;
@@ -104,7 +106,7 @@ public class StitchOverlapPatches {
 //            	saveName = savePath + "pix2pixGAN" + idx + ".png";
             	saveName = savePath + "pixSR" + idx + ".png";
             else
-            	saveName = savePath + "RDNssMask" + idx + ".png";
+            	saveName = savePath + "RDNssRedo" + idx + ".png";
 //            	saveName = savePath + "RRDNss" + idx + ".png";
     		imp = ImageUtil.wrapGrid(us, null);
     		imp.setDisplayRange(0, 255);

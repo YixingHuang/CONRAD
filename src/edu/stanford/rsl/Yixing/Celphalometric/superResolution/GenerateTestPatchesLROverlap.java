@@ -13,14 +13,14 @@ import flanagan.interpolation.*;
 public class GenerateTestPatchesLROverlap {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		boolean isPix = false;
+		boolean isPix = true;
 		GenerateTestPatchesLROverlap obj = new GenerateTestPatchesLROverlap();
 		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
 		String savePath;
 		if(isPix)
-			savePath = "D:\\Pix2pix\\tools\\superResolution\\testCelp\\";
+			savePath = "D:\\Pix2pix\\tools\\superResolution\\testCelpSoft2Others\\";
 		else
-			savePath = "D:\\imageSuperResolutionV2_1\\low_res\\testCelpSoft\\";
+			savePath = "D:\\imageSuperResolutionV2_1\\low_res\\testCelpSoftOthers\\";
 		
 		String saveName;
 		ImagePlus imp;
@@ -33,20 +33,20 @@ public class GenerateTestPatchesLROverlap {
 		
 		patchIn = new Grid2D(sz, sz);
 		patchOut = new Grid2D(sz, sz);
-		for(int idx = 0; idx <= 0; idx ++) {
+		for(int idx = 0; idx <= 4; idx ++) {
 			imgNameIn = path + "p" + idx + ".png";
 			imp = IJ.openImage(imgNameIn);
 			us = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
-//            for(int i = 0; i <= 16; i++) {
-//            	for(int j = 0; j <= 16; j++ ) {
-//            		startX = i * 32;
-//            		startY = j * 32;
-//					saveId = idx * 10000 + j * 100 + i;
-            for(int i = 7; i <= 7; i++) {
-            	for(int j = 12; j <= 12; j++ ) {
-            		startX = i * 32 + 6;
-            		startY = j * 32 + 25;
-            		saveId = 10000 + j * 100 + i;
+            for(int i = 0; i <= 16; i++) {
+            	for(int j = 0; j <= 16; j++ ) {
+            		startX = i * 32;
+            		startY = j * 32;
+					saveId = idx * 10000 + j * 100 + i;
+//            for(int i = 7; i <= 7; i++) {
+//            	for(int j = 12; j <= 12; j++ ) {
+//            		startX = i * 32 + 6;
+//            		startY = j * 32 + 25;
+//            		saveId = 10000 + j * 100 + i;
             		for(int x = 0; x < sz; x++) {
             			for(int y = 0; y < sz; y++)
             			{

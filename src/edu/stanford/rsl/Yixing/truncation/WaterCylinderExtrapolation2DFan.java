@@ -10,7 +10,8 @@ import edu.stanford.rsl.conrad.data.numeric.Grid3D;
  */
 public class WaterCylinderExtrapolation2DFan {
 	int numTrunc = 150;
-	public float xsinc = 0.2f; //adjust the level of extrapolation
+//	public float xsinc = 0.2f; //adjust the level of extrapolation 0.2f default
+	public float xsinc = 0.1f; //adjust the level of extrapolation 0.1f for TMI clinic
 	//zeroMask: positions of zero values, 1 stands for nonzero value, 0 stands for zero value
 	private int trans = 20; //number of samples used for slope calculation
 	private int[] ibL, ibR;//left and right stat points for extrapolation
@@ -40,6 +41,26 @@ public WaterCylinderExtrapolation2DFan(int height, int numTrunc){
 	this.rR = new float[this.height];
 	this.isLTruncated = new boolean[this.height];
 	this.isRTruncated = new boolean[this.height];
+}
+
+public WaterCylinderExtrapolation2DFan(int height, int numTrunc, float xsinc){
+	this.numTrunc = numTrunc;
+	this.height = height;
+	this.ibL = new int[this.height];
+	this.ibR = new int[this.height];
+	this.left_samples = new Grid2D(this.trans, this.height);
+	this.right_samples = new Grid2D(this.trans, this.height);
+	this.proL = new float[this.height];
+	this.proR = new float[this.height];
+	this.slopeL = new float[this.height];
+	this.slopeR = new float[this.height];
+	this.xL = new float[this.height];
+	this.xR = new float[this.height];
+	this.rL = new float[this.height];
+	this.rR = new float[this.height];
+	this.isLTruncated = new boolean[this.height];
+	this.isRTruncated = new boolean[this.height];
+	this.xsinc = xsinc;
 }
 
 

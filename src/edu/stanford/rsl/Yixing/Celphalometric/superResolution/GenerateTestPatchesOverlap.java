@@ -13,14 +13,14 @@ import flanagan.interpolation.*;
 public class GenerateTestPatchesOverlap {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
-		boolean isPix = false;
+		boolean isPix = true;
 		GenerateTestPatchesOverlap obj = new GenerateTestPatchesOverlap();
-		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
+		String path = "D:\\Tasks\\FAU4\\Cephalometric\\CycleGANresults\\";
 		String savePath;
 		if(isPix)
-			savePath = "D:\\Pix2pix\\tools\\superResolution\\testCelpSoft2\\";
+			savePath = "D:\\Pix2pix\\tools\\superResolution\\testCycle\\";
 		else
-			savePath = "D:\\imageSuperResolutionV2_1\\low_res\\testCelpSoftss\\";
+			savePath = "D:\\imageSuperResolutionV2_1\\low_res\\testCelpSoftssOthers\\";
 		
 		String saveName;
 		ImagePlus imp;
@@ -33,8 +33,8 @@ public class GenerateTestPatchesOverlap {
 		
 		patchIn = new Grid2D(sz, sz);
 		patchOut = new Grid2D(sz, sz);
-		for(int idx = 0; idx <= 0; idx ++) {
-			imgNameIn = path + "ps" + idx + ".png";
+		for(int idx = 1; idx <= 5; idx ++) {
+			imgNameIn = path + "qs" + idx + ".png";
 			imp = IJ.openImage(imgNameIn);
 			us = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
             for(int i = 0; i <= 18; i++) {

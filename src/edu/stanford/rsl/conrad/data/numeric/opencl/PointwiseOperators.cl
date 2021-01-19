@@ -435,6 +435,16 @@ kernel void power(global float *grid, const float exponent, int const num_elemen
     grid[global_id] = pow(grid[global_id], exponent);
 }
 
+kernel void expotential(global float *grid, int const num_elements )
+{
+    int global_id = get_global_id(0);
+    
+    if(global_id >= num_elements)
+        return;
+    
+    grid[global_id] = exp(grid[global_id]);
+}
+
 /* Remove negative elements */
 kernel void minimalValue(global float *grid, const float value, int const num_elements)
 {
@@ -457,6 +467,15 @@ kernel void logarithm2(global float *grid, int const num_elements )
     grid[global_id] = log2(grid[global_id]);
 }
 
+kernel void logarithm(global float *grid, int const num_elements )
+{
+    int global_id = get_global_id(0);
+    
+    if(global_id >= num_elements)
+        return;
+    
+    grid[global_id] = log(grid[global_id]);
+}
 
 /* grid = log10(grid) */
 kernel void logarithm10(global float *grid, int const num_elements )
@@ -594,5 +613,19 @@ kernel void softThreshold(global float *grid,  const float thres, int const num_
     			else
     				grid[global_id] = 0;
     				}
+    	}
+}
+    	
+kernel void threshold(global float *grid,  const float thres, int const num_elements )
+{
+    int global_id = get_global_id(0);
+    
+    if(global_id >= num_elements)
+        return;
+    if(isnan(grid[global_id]) || isnan(grid[global_id]))
+		grid[global_id] = 0;
+    else{
+    	if (grid[global_id] < thres)
+    		grid[global_id] = 0;
     	}
 }

@@ -1,4 +1,4 @@
-package edu.stanford.rsl.Yixing.truncationNew;
+package edu.stanford.rsl.Yixing.truncationPix;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -19,8 +19,8 @@ public class SplitIntoSingleSlicesGAN {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		SplitIntoSingleSlicesGAN obj = new SplitIntoSingleSlicesGAN();
-		String path = "D:\\Tasks\\FAU4\\TruncationCorrection\\NoiseFree3D\\recon\\";
-		String path2 = "D:\\Pix2pix\\tools\\truncation\\NoiseFree\\";
+		String path = "D:\\Tasks\\FAU4\\TruncationCorrection\\Noisy3D\\recon\\";
+		String path2 = "D:\\Pix2pix\\tools\\truncation\\Noisy3D\\";
 		ImagePlus imp1, imp2;
 		String name1, name2, saveName1;
 		Grid3D data, mask;
@@ -29,7 +29,7 @@ public class SplitIntoSingleSlicesGAN {
 		int saveIndex, getIndex;
 		File outPutDir;
 		for(int idx = 1; idx<=18; idx ++){
-			name1 = path + "reconLimited" + idx + ".tif";
+			name1 = path + "reconTruncated" + idx + ".tif";
 			//name2 = path + "reconGT" + idx + ".tif";
 			name2 = path + "artifacts" + idx + ".tif";
 			imp1=IJ.openImage(name1);

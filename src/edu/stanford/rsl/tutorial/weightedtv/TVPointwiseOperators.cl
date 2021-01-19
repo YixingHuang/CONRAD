@@ -1544,7 +1544,7 @@ kernel void truncateProjections(global float* gridProj, const float numTrunc, co
 	}
 }
 
-kernel void combineProjections(global float* gridProcessed, global float* gridProj, const float numTrunc, const int sizeX, const int sizeY, const int sizeZ)
+kernel void combineProjections(global float* gridProcessed, global float* gridProj, const int numTrunc, const int sizeX, const int sizeY, const int sizeZ)
 {
 
 	int x = get_global_id(0);
@@ -1561,6 +1561,120 @@ kernel void combineProjections(global float* gridProcessed, global float* gridPr
 		idx = z * sizeX * sizeY + y * sizeX + x;
 		if(x < numTrunc || x > sizeX - numTrunc -1)
 			gridProcessed[idx] = gridProj[idx];
+	}
+}
+
+kernel void combineProjectionsScale(global float* gridProcessed, global float* gridProj, const int numTrunc, const int sizeX, const int sizeY, const int sizeZ)
+{
+
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+	
+	
+	if((x >= sizeX) ||(y >= sizeY))
+	{
+		return;
+	}
+	int idx, idx1, idx2;
+	float scale1, scale2;
+	for(int z = 0; z < sizeZ; z++)
+	{
+		idx = z * sizeX * sizeY + y * sizeX + x;
+		idx1 = z * sizeX * sizeY + y * sizeX + numTrunc;
+		idx2 = z * sizeX * sizeY + y * sizeX + sizeX - numTrunc - 1;
+		if(x < numTrunc)
+		{
+			scale1 = 1.0f;
+			if(gridProj[idx1] > 0.00001f)
+				scale1 = gridProcessed[idx1]/gridProj[idx1];
+			if(scale1 > 10.0f)
+				scale1 = 1.0f;
+			gridProcessed[idx] = gridProj[idx] * scale1;
+		}		
+		else if(x > sizeX - numTrunc -1)
+		{
+			scale2 = 1.0f;
+			if(gridProj[idx2] > 0.00001f)
+				scale2 = gridProcessed[idx2]/gridProj[idx2];
+			if(scale2 > 10.0f)
+				scale2 = 1.0f;
+			gridProcessed[idx] = gridProj[idx] * scale2;	
+		}
+	}
+}
+
+kernel void combineProjectionsScaleNoThres(global float* gridProcessed, global float* gridProj, const int numTrunc, const int sizeX, const int sizeY, const int sizeZ)
+{
+
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+	
+	
+	if((x >= sizeX) ||(y >= sizeY))
+	{
+		return;
+	}
+	int idx, idx1, idx2;
+	float scale1, scale2;
+	for(int z = 0; z < sizeZ; z++)
+	{
+		idx = z * sizeX * sizeY + y * sizeX + x;
+		idx1 = z * sizeX * sizeY + y * sizeX + numTrunc;
+		idx2 = z * sizeX * sizeY + y * sizeX + sizeX - numTrunc - 1;
+		if(x < numTrunc)
+		{
+			scale1 = 1.0f;
+			if(gridProj[idx1] > 0.00001f)
+				scale1 = gridProcessed[idx1]/gridProj[idx1];
+//			if(scale1 > 10.0f)
+//				scale1 = 1.0f;
+			gridProcessed[idx] = gridProj[idx] * scale1;
+		}		
+		else if(x > sizeX - numTrunc -1)
+		{
+			scale2 = 1.0f;
+			if(gridProj[idx2] > 0.00001f)
+				scale2 = gridProcessed[idx2]/gridProj[idx2];
+//			if(scale2 > 5.0f)
+//				scale2 = 1.0f;
+			gridProcessed[idx] = gridProj[idx] * scale2;	
+		}
+	}
+}
+
+
+kernel void combineProjectionsSubtraction(global float* gridProcessed, global float* gridProj, const int numTrunc, const int sizeX, const int sizeY, const int sizeZ)
+{
+
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+	
+	
+	if((x >= sizeX) ||(y >= sizeY))
+	{
+		return;
+	}
+	int idx, idx1, idx2;
+	float diff1, diff2;
+	for(int z = 0; z < sizeZ; z++)
+	{
+		idx = z * sizeX * sizeY + y * sizeX + x;
+		idx1 = z * sizeX * sizeY + y * sizeX + numTrunc;
+		idx2 = z * sizeX * sizeY + y * sizeX + sizeX - numTrunc - 1;
+		if(x < numTrunc)
+		{
+			diff1 = gridProcessed[idx1] - gridProj[idx1];
+			gridProcessed[idx] = gridProj[idx] + diff1;
+			if(gridProcessed[idx] < 0)
+				gridProcessed[idx] = 0;
+		}		
+		else if(x > sizeX - numTrunc -1)
+		{
+			diff2 = gridProcessed[idx2] - gridProj[idx2];
+			gridProcessed[idx] = gridProj[idx] + diff2;	
+			if(gridProcessed[idx] < 0)
+				gridProcessed[idx] = 0;
+		}
 	}
 }
 

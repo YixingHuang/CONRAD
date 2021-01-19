@@ -1196,5 +1196,19 @@ public class NumericGridOperator {
 		}
 		grid.notifyAfterWrite();
 	}
+	
+	public void thresholding(NumericGrid grid, float value) {
+		// TODO Auto-generated method stub
+		NumericPointwiseIteratorND it = new NumericPointwiseIteratorND(grid);
+		float val;
+		while (it.hasNext())
+		{
+			val = it.get();
+			if(val < value)
+				val = 0;
+			it.setNext(val);
+		}
+		grid.notifyAfterWrite();
+	}
 
 }

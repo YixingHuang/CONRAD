@@ -59,7 +59,7 @@ public class CombineProjections {
 		
 		ImagePlus imp1, imp2;
 		boolean isTumor = false;
-		float numTrunc = 350;
+		int numTrunc = 350;
 		TVOpenCLGridOperators op = TVOpenCLGridOperators.getInstance();
 		WaterCylinderExtrapolation2DFan wceObj = new WaterCylinderExtrapolation2DFan(obj.height, (int)numTrunc);
 		Grid2D tempSino;

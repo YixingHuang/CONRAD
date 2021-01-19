@@ -24,8 +24,8 @@ import edu.stanford.rsl.tutorial.weightedtv.TVOpenCLGridOperators;
 import edu.stanford.rsl.Yixing.truncation.WaterCylinderExtrapolation2DFan;
 
 public class GenerateReconstrutions {
-	protected boolean isExt = true;
-	private boolean isPwls = true;
+	protected boolean isExt = false;
+	private boolean isPwls = false;
 	public int factor = 2; //image size factor
 	protected int maxProjs;
 	public int imgSizeX;
@@ -47,8 +47,8 @@ public class GenerateReconstrutions {
 	public Grid3D recon;
 	public Grid3D sinogram;
 
-	private String sinoPath = "E:\\Lasse\\BVM\\";
-	private String savePath = "E:\\Lasse\\BVM\\";
+	private String sinoPath = "E:\\Lasse\\LimitedAngle\\";
+	private String savePath = "E:\\Lasse\\LimitedAngle\\";
 	
 	public static void main(String[] args) throws Exception {
 		new ImageJ();
@@ -60,7 +60,7 @@ public class GenerateReconstrutions {
 		ImagePlus imp, imp3;
 		String saveName, sliceName;
 		Grid2D slice;
-		for(int i = 8; i <= 8; i++){
+		for(int i = 1; i <= 1; i++){
 			
 			if(i == 6)
 				obj.isExt = true;
@@ -109,7 +109,8 @@ public class GenerateReconstrutions {
 		if(isPwls)
 			name = sinoPath + "projectionPwls" + idx + ".tif";
 		else
-			name = sinoPath + "projectionNoisy" + idx + ".tif";
+			name = sinoPath + "projection150Degree" + idx + ".tif";
+		
 		ImagePlus imp0 =IJ.openImage(name);
 		sinogram = ImageUtil.wrapImagePlus(imp0);
 	

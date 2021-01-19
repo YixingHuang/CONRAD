@@ -13,8 +13,8 @@ public class CropImagesForAllPatients {
 	public static void main(String[] args) throws IOException{
 		new ImageJ();
 		GenerateTestPatches obj = new GenerateTestPatches();
-		String path = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
-		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\generatedCelps2\\";
+		String path = "D:\\Tasks\\FAU4\\Cephalometric\\CycleGANresults\\";
+		String savePath = "D:\\Tasks\\FAU4\\Cephalometric\\CycleGANresults\\";
 		String saveName;
 		ImagePlus imp;
 		String imgNameIn;
@@ -51,7 +51,7 @@ public class CropImagesForAllPatients {
 		offset = 625;
 //		offset2 = 10;  //1,2,3,
 		offset2 = 150;
-		for(int id = 0; id <=0; id++)
+		for(int id = 0; id <=4; id++)
 		{
 			if(id == 0)
 			{

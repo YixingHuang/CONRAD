@@ -62,6 +62,16 @@ public class CropPatches3DCelps {
 		saveName = savePath + "MIP50" + sz + "_2.png";
 		IJ.saveAs(imp, "png", saveName);
 		
+		imgNameIn = path + "cycleGANTypeI2.png";
+		imp = IJ.openImage(imgNameIn);
+		img = ImageUtil.wrapImagePlus(imp).getSubGrid(0);
+		img2 = cropImage(img, offset1, offset2,sz, sz2);;
+		img2.clone().show(idx + "cycleGANTypeI2" + sz);
+		imp = ImageUtil.wrapGrid(img2, null);
+		imp.setDisplayRange(0, 125);
+		saveName = savePath + "cycleGANTypeI2" + sz + "_2.png";
+		IJ.saveAs(imp, "png", saveName);
+		
 		
 		imgNameIn = path + "MIP100.png";
 		imp = IJ.openImage(imgNameIn);

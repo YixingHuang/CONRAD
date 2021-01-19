@@ -383,6 +383,31 @@ public class TVOpenCLGridOperators extends OpenCLGridOperators{
 		return null;
 	}
 	
+	
+	private CLBuffer<FloatBuffer> runKernel(String kernelName, CLDevice device, CLBuffer<FloatBuffer> gridABuffer, CLBuffer<FloatBuffer> gridBBuffer, int eps,int[]gridSize) { 
+		int elementCount = gridABuffer.getCLCapacity(); 
+		
+		OpenCLSetup openCLSetup = new OpenCLSetup(kernelName, device);
+
+		CLKernel kernel = openCLSetup.getKernel();
+		CLCommandQueue queue = openCLSetup.getCommandQueue();
+		CLContext context = openCLSetup.getContext();
+		
+		int localSize = Math.min(device.getMaxWorkGroupSize(), 16);
+		//int globalSize = openCLSetup.getGlobalSize(elementCount);
+		int globalWorkSizeX = OpenCLUtil.roundUp(localSize, gridSize[0]); // rounded up to the nearest multiple of localWorkSize
+		int globalWorkSizeY = OpenCLUtil.roundUp(localSize, gridSize[1]);
+				
+		
+			kernel.putArg(gridABuffer).putArg(gridBBuffer).putArg(eps).putArg(gridSize[0]).putArg(gridSize[1]).putArg(gridSize[2]);
+			queue.put2DRangeKernel(kernel,0, 0, globalWorkSizeX, globalWorkSizeY,localSize,localSize);
+		
+		
+		queue.finish();
+		kernel.rewind();
+		return null;
+	}
+	
 	/**
 	 * run 2D range kernel with the format 'gridA = gridB operation floata' for 2D images
 	 * @param kernelName
@@ -962,9 +987,10 @@ public class TVOpenCLGridOperators extends OpenCLGridOperators{
 		CLDevice device=clImgGrid.getDelegate().getCLDevice();
 		CLBuffer<FloatBuffer> clmemImg=clImgGrid.getDelegate().getCLBuffer();
 		runKernel("truncateProjections", device,clmemImg, numTrunc, imgGrid.getSize());
+		clImgGrid.getDelegate().notifyDeviceChange();
 	}
 
-	public void combineProjections(NumericGrid processed, NumericGrid proj, float numTrunc){
+	public void combineProjections(NumericGrid processed, NumericGrid proj, int numTrunc){
 		OpenCLGridInterface clProcessed = (OpenCLGridInterface)processed;
 		OpenCLGridInterface clProj = (OpenCLGridInterface)proj;
 		
@@ -975,6 +1001,48 @@ public class TVOpenCLGridOperators extends OpenCLGridOperators{
 		CLBuffer<FloatBuffer> clmemProcessed = clProcessed.getDelegate().getCLBuffer();
 		CLBuffer<FloatBuffer> clmemProj = clProj.getDelegate().getCLBuffer();
 		runKernel("combineProjections",device,clmemProcessed, clmemProj, numTrunc, proj.getSize());
+		clProcessed.getDelegate().notifyDeviceChange();
+	}
+	
+	public void combineProjectionsScale(NumericGrid processed, NumericGrid proj, int numTrunc){
+		OpenCLGridInterface clProcessed = (OpenCLGridInterface)processed;
+		OpenCLGridInterface clProj = (OpenCLGridInterface)proj;
+		
+		clProcessed.getDelegate().prepareForDeviceOperation();
+		clProj.getDelegate().prepareForDeviceOperation();
+		CLDevice device = clProcessed.getDelegate().getCLDevice();
+
+		CLBuffer<FloatBuffer> clmemProcessed = clProcessed.getDelegate().getCLBuffer();
+		CLBuffer<FloatBuffer> clmemProj = clProj.getDelegate().getCLBuffer();
+		runKernel("combineProjectionsScale",device,clmemProcessed, clmemProj, numTrunc, proj.getSize());
+		clProcessed.getDelegate().notifyDeviceChange();
+	}
+	
+	public void combineProjectionsScaleNoThres(NumericGrid processed, NumericGrid proj, int numTrunc){
+		OpenCLGridInterface clProcessed = (OpenCLGridInterface)processed;
+		OpenCLGridInterface clProj = (OpenCLGridInterface)proj;
+		
+		clProcessed.getDelegate().prepareForDeviceOperation();
+		clProj.getDelegate().prepareForDeviceOperation();
+		CLDevice device = clProcessed.getDelegate().getCLDevice();
+
+		CLBuffer<FloatBuffer> clmemProcessed = clProcessed.getDelegate().getCLBuffer();
+		CLBuffer<FloatBuffer> clmemProj = clProj.getDelegate().getCLBuffer();
+		runKernel("combineProjectionsScaleNoThres",device,clmemProcessed, clmemProj, numTrunc, proj.getSize());
+		clProcessed.getDelegate().notifyDeviceChange();
+	}
+	
+	public void combineProjectionsSubtraction(NumericGrid processed, NumericGrid proj, int numTrunc){
+		OpenCLGridInterface clProcessed = (OpenCLGridInterface)processed;
+		OpenCLGridInterface clProj = (OpenCLGridInterface)proj;
+		
+		clProcessed.getDelegate().prepareForDeviceOperation();
+		clProj.getDelegate().prepareForDeviceOperation();
+		CLDevice device = clProcessed.getDelegate().getCLDevice();
+
+		CLBuffer<FloatBuffer> clmemProcessed = clProcessed.getDelegate().getCLBuffer();
+		CLBuffer<FloatBuffer> clmemProj = clProj.getDelegate().getCLBuffer();
+		runKernel("combineProjectionsSubtraction",device,clmemProcessed, clmemProj, numTrunc, proj.getSize());
 		clProcessed.getDelegate().notifyDeviceChange();
 	}
 	

@@ -32,6 +32,7 @@ public class CalculateRmseFOVForEachPatient {
 		File outPutDir0, outPutDir1;
 		BufferedWriter bw0, bw1; 
 		double sumFbp, sumWce, sumWtv, sumUnet, sumDcr;
+		double meanFbp=0, meanWce=0, meanWtv = 0, meanUnet=0, meanDcr=0, meanPix=0, meanDirect=0, meanScale=0, meanSub=0;
 		for(int idx = 1; idx <= 18; idx ++){
 			if(idx == 4 )
 				continue;
@@ -138,6 +139,8 @@ public class CalculateRmseFOVForEachPatient {
 			sumUnet = sumUnet/(gt.getSize()[2] - 40);
 			sumDcr = sumDcr/(gt.getSize()[2] - 40);
 			System.out.println(sumFbp + " " + sumWce + " " + sumWtv + " " + sumUnet + " " + sumDcr);
+			
+			
 		}
 		
 		
