@@ -35,7 +35,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.*;
 import javax.swing.tree.*;
 
-import com.sun.tracing.dtrace.ArgsAttributes;
+//import com.sun.tracing.dtrace.ArgsAttributes;
 
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;

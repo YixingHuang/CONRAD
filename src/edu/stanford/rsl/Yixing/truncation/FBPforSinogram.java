@@ -8,9 +8,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
-
 import edu.stanford.rsl.conrad.data.numeric.Grid2D;
 import edu.stanford.rsl.conrad.data.numeric.Grid3D;
 import edu.stanford.rsl.conrad.filtering.PoissonNoiseFilteringTool;
