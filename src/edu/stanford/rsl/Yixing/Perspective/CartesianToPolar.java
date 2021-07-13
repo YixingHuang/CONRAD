@@ -241,17 +241,52 @@ public class CartesianToPolar {
 		return val;
 	}
 	
+	
+	public Grid2D linearSampling(Grid2D imgPolar, double spacingPixel0) {
+		Grid2D imgPolarLS = new Grid2D(imgPolar.getSize()[0], imgPolar.getSize()[1]);
+		imgPolarLS.setSpacing(spacingPixel0, imgPolar.getSpacing()[1]);
+		imgPolarLS.setOrigin(spacingPixel0/2.0, 0);
+		
+		double rho, theta;
+		for(int i = 0; i < imgPolarLS.getSize()[0]; i++)
+			for(int j = 0; j < imgPolarLS.getSize()[1]; j++)
+			{
+				rho = imgPolarLS.getOrigin()[0] + i * (i + 1)/2.0 * spacingPixel0;
+				theta = imgPolarLS.getOrigin()[1] + j * imgPolarLS.getSpacing()[1];
+				imgPolarLS.setAtIndex(i, j, getAtPhysicalPolar(rho, theta, imgPolar));
+			}
+		
+		return imgPolarLS;
+	}
+	
+	public Grid2D logTransform(Grid2D imgPolar, double spacingPixel0) {
+		Grid2D imgPolarLS = new Grid2D(imgPolar.getSize()[0], imgPolar.getSize()[1]);
+		imgPolarLS.setSpacing(spacingPixel0, imgPolar.getSpacing()[1]);
+		imgPolarLS.setOrigin(spacingPixel0/2.0, 0);
+		
+		double rho, theta;
+		for(int i = 0; i < imgPolarLS.getSize()[0]; i++)
+			for(int j = 0; j < imgPolarLS.getSize()[1]; j++)
+			{
+				rho = Math.pow(Math.E, spacingPixel0 * j);
+				theta = imgPolarLS.getOrigin()[1] + j * imgPolarLS.getSpacing()[1];
+				imgPolarLS.setAtIndex(i, j, getAtPhysicalPolar(rho, theta, imgPolar));
+			}
+		
+		return imgPolarLS;
+	}
+	
 	public static void main(String[] args) throws Exception {
 		new ImageJ();
-		String dataPath = "C:\\Data\\CTdata\\1.tif"; 
+		String dataPath = "C:\\Perspective\\tryData\\0.tif"; 
 		ImagePlus imp = IJ.openImage(dataPath);
 		Grid3D vol = ImageUtil.wrapImagePlus(imp);
-		Grid2D img = (Grid2D)vol.getSubGrid(250).clone();
+		Grid2D img = (Grid2D)vol.getSubGrid(0).clone();
 		img.setSpacing(0.5, 0.5);
 		double radialStep = 0.25;
 		double angularStep = 0.5;
 		CartesianToPolar obj = new CartesianToPolar(img, radialStep, angularStep); 
-		Grid2D imgPolar = obj.convertCartisian2Polar();
+		Grid2D imgPolar = (Grid2D)obj.convertCartisian2Polar().clone();
 		Grid2D imgCart = obj.convertPolar2Cartisian();
 		
 		Grid2D diff = new Grid2D(imgCart);
@@ -261,8 +296,33 @@ public class CartesianToPolar {
 		imgPolar.clone().show("polar image");
 		imgCart.clone().show("restored cartisian image");
 		diff.clone().show("difference");
-	
+		Grid2D imgPolarLS = obj.linearSampling(imgPolar, radialStep/200.0);
+		imgPolarLS.clone().show("imgPolarLS");
+		
+		Grid2D img2 = (Grid2D)vol.getSubGrid(1).clone();
+		img2.setSpacing(0.5, 0.5);
 
+		Grid2D imgPolar2 = obj.convertCartisian2Polar(img2);
+		Grid2D imgCart2 = obj.convertPolar2Cartisian(imgPolar2);
+		
+		Grid2D diff2 = new Grid2D(imgCart2);
+		diff2.getGridOperator().subtractBy(diff2, img2);
+		
+		img2.clone().show("original image2");
+		imgPolar2.clone().show("polar image2");
+		imgCart2.clone().show("restored cartisian image2");
+		diff2.clone().show("difference2");
+		
+		Grid2D diff3 = new Grid2D(imgPolar2);
+		diff3.getGridOperator().subtractBy(diff3, imgPolar);
+		diff3.clone().show("difference between 0 and 180 projections");
+	
+		Grid2D imgPolarLS2 = obj.linearSampling(imgPolar2, radialStep/200.0);
+		imgPolarLS2.clone().show("imgPolarLS2");
+		
+		Grid2D diff4 = new Grid2D(imgPolarLS2);
+		diff4.getGridOperator().subtractBy(diff4, imgPolarLS);
+		diff4.clone().show("difference between linear-sampled polar images");
 		
 	}
 }
